@@ -8,7 +8,7 @@ The SODA is a self-organized algorithm which, partitions a data-set into non-par
 * SODA.py: A python version of SODA routines and processes;
 * data_manipulation.py: A library containing all the routines and processes employed by our model;  
 * results: Folder containing the outputs of `Anomaly_Detection.py` script;
-* Analysed_Signal: Folder containing the data and labels of the detected anomalies;
+* Analysed_Signal: Folder containing the data and labels of the detected anomalies.
 
 ### python dependencies
 
