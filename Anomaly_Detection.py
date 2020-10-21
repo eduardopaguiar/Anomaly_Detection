@@ -1,4 +1,3 @@
-
 import numpy as np
 import random
 import time
@@ -19,89 +18,125 @@ import os
 import SODA
 import data_manipulation as dm
 from progress.bar import Bar
+import multiprocessing
 
-#-------------------------------------------------------------------------------------#
-#---------------------------------Initiation Part-------------------------------------#
 
-####### Variables set by user #######
+def calculate(func, args):
+    result = func(*args)
+    return result
 
-# PCA number of components
-N_PCs = 8
+def calculatestar(args):
+    return calculate(*args)
 
-# Range of SODA granularities
-min_granularity = 20
-max_granularity = 50
+def main():
+    #-----------------------------------------------------------------------------------#
+    #---------------------------------Initiation Part-----------------------------------#
 
-# Number of iteration
-n_i = 33
+    ####### Variables set by user #######
 
-# Firstly the model loads the background and signal data, then it removes the 
-# attributes first string line, in order to avoid NaN values in the array.
+    # PCA number of components
+    N_PCs = 8
+    L_N_PCs = 8
 
-# Loading data into the code
+    # Range of SODA granularities
+    min_granularity = 1
 
-### Background    
+    max_granularity = 2
 
-b_name='Input_Background_1.csv'
+    # Number of iteration
+    iterations = 1
 
-background = np.genfromtxt(b_name, delimiter=',')
-background = background[1:,:]
+    # Number of process to create in the multiprocessing step
+    PROCESSES = 4
 
-### Signal
+    # Firstly the model loads the background and signal data, then it removes the 
+    # attributes first string line, in order to avoid NaN values in the array.
 
-s_name='Input_Signal_1.csv'
+    # Loading data into the code
 
-signal = np.genfromtxt(s_name, delimiter=',')
-signal = signal[1:,:]
+    ### Background    
 
-# Devide data-set into training and testing sub-sets
+    b_name='Reduced_Input_Background_1.csv'
 
-background_train, background_test = train_test_split(background, test_size=0.40, random_state=42)
+    background = np.genfromtxt(b_name, delimiter=',')
+    background = background[1:,:]
 
-# Defining number of events Signal events.
+    ### Signal
 
-signal_samples = int(len(background_test)/99)
+    s_name='Reduced_Input_Signal_1.csv'
 
-#-------------------------------------------------------------------------------------#
-#-------------------------------------Main Code---------------------------------------#
+    signal = np.genfromtxt(s_name, delimiter=',')
+    signal = signal[1:,:]
 
-# Iniciates progress bar
-bar = Bar(('Progess:'), max=n_i)
-bar.start()
+    for n_i in range(iterations):
 
-for i in range(n_i):
-    # all attributes with nomalisation after PCA
-    # Devide online signal
-    reduced_signal, signal_sample_id = dm.divide(signal, 100, signal_samples)
 
-    # Creates a label for the analyses part
+        #------------------------------------------------------------------------------#
+        #---------------------------------Main Code------------------------------------#
 
-    # Nextly, the Signal data processed is saved in the Analised data directory.
+        # Devide data-set into training and testing sub-sets
 
-    np.savetxt('Analysed_Signal/Reduced_' + s_name,reduced_signal,delimiter=',')
-    np.savetxt('Analysed_Signal/Reduced_ID_' + s_name,signal_sample_id,delimiter=',')
+        background_train, background_test = train_test_split(background, test_size=0.40, random_state=42)
 
-    # Concatenating Signal and the Test Background sub-set
+        # Defining number of events Signal events on online phase.
 
-    streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
+        signal_online_samples = int(len(background_test)/99)
 
-    # Calculates Statistical attributes
+        # Devide online signal
+        reduced_signal, signal_sample_id = dm.divide(signal, 100, signal_online_samples)
 
-    background_train_stat = dm.statistics_attributes(background_train,xyz_attributes=False)
-    streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=False)
+        # Nextly, the Signal data processed is saved in the Analised data directory.
 
-    # Calculates PCA and projects the sub-sets 
+        np.savetxt('Analysed_Signal/Reduced_' + s_name,reduced_signal,delimiter=',')
+        np.savetxt('Analysed_Signal/Reduced_ID_' + s_name,signal_sample_id,delimiter=',')
 
-    proj_background_train, proj_streaming_data, mantained_variation, attributes_influence = dm.PCA_Projection(background_train_stat,streaming_data,N_PCs,norm=True)
+        # Concatenating Signal and the Test Background sub-set
 
-    if i == 0:
-        # Plots PCA results
+        streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
-        dm.PCA_Analysis(mantained_variation,attributes_influence,norm=True,xyz_attributes=False)
+        # Calculates Statistical attributes
 
-        # Performes SODA interactively whith the given granularities
+        xyz_streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=True)
+        xyz_background_train = dm.statistics_attributes(background_train,xyz_attributes=True)
+        xyz_signal = dm.statistics_attributes(signal,xyz_attributes=True)
 
-    dm.SODA_Granularity_Iteration(proj_background_train,proj_streaming_data,max_granularity,min_granularity,len(background_test),i,norm=True,xyz_attributes=False)
+        # Normalize Features
+        norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
+        norm_background_train = dm.Normalisation(xyz_background_train)
+        norm_divided_signal = dm.Normalisation(xyz_signal)
 
-    bar.next()
-bar.finish()
+        # Using Laplace to determine the features to maintain
+
+        maintained_features = dm.laplacian_score(norm_background_train,norm_divided_signal,16)
+
+        # Performing Laplace reduciton 
+        laplace_background = dm.laplacian_reduction(norm_background_train,maintained_features)
+        laplace_streaming_data = dm.laplacian_reduction(norm_xyz_streaming_data,maintained_features)
+
+        # Calculates PCA and projects the sub-sets 
+
+        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_background_train,norm_xyz_streaming_data,N_PCs,maintained_features,laplace=False)
+
+        proj_laplace_background, proj_laplace_streaming_data, laplace_mantained_variation, laplace_attributes_influence = dm.PCA_Projection(laplace_background,laplace_streaming_data,L_N_PCs, maintained_features,laplace=True)
+
+        if n_i == 0:
+            # Plots PCA results
+            dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence,laplace=False)
+
+            dm.PCA_Analysis(laplace_mantained_variation,laplace_attributes_influence,laplace=True)
+
+
+        print('Creating pool with %d processes\n' % PROCESSES)
+
+        with multiprocessing.Pool(PROCESSES) as pool:
+
+            #
+            # Tests
+
+            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)] + [(dm.SODA_Granularity_Iteration, (proj_laplace_background,proj_laplace_streaming_data, gra,len(background_test),n_i,0)) for gra in range(min_granularity, max_granularity + 1)]
+
+            pool.map(calculatestar, TASKS)
+
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    main()       
