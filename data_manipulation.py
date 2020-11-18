@@ -9,6 +9,15 @@ import SODA
 import threading
 from datetime import datetime
 from psutil import cpu_percent, swap_memory
+from progress.bar import Bar
+from sklearn.neighbors import kneighbors_graph 
+from scipy.sparse.linalg import expm
+import scipy.sparse 
+from sklearn.metrics.pairwise import euclidean_distances
+from sklearn import preprocessing
+import sklearn
+
+
 
 class performance(threading.Thread):
     # Declares variables for perfomance analysis:
@@ -154,27 +163,21 @@ def divide(data, n_windows = 100, n_samples = 50):
         
     return reduced_data, data_sample_id
 
-def Normalisation(background_train,streaming_data):
+def Normalisation(data):
     """Use standart deviation to normalise the data
     -- Input
-    - Offline data
-    - Streaming data
+    - data
     -- Output
-    - Normalised Offline
-    - Normalised Streaming
+    - Normalised data
     """
 
-    # Normalizing whole background's train sub-set
-    scaler = StandardScaler().fit(background_train)
-    norm_background_train = scaler.transform(background_train)
+    # Normalizing whole data
+    scaler = StandardScaler().fit(data)
+    norm_data = scaler.transform(data)
 
-    # Normalizing whole streaming data's sub-set
-    scaler = StandardScaler().fit(streaming_data)
-    norm_streaming_data = scaler.transform(streaming_data)
+    return norm_data
 
-    return norm_background_train, norm_streaming_data
-
-def PCA_Analysis(mantained_variation, attributes_influence,norm=True,xyz_attributes=True):
+def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     """Create and save the PCA model
     -- Input
     - mantained_variation = variation mantained for each PC
@@ -195,11 +198,11 @@ def PCA_Analysis(mantained_variation, attributes_influence,norm=True,xyz_attribu
     ax.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    if xyz_attributes == True:
-        fig.savefig('results/Percentage_of_Variance_Held_xyz_attributes.png') 
+    if laplace == True:
+        fig.savefig('results/Percentage_of_Variance_Held_laplace.png', bbox_inches='tight') 
 
     else:
-        fig.savefig('results/Percentage_of_Variance_Held_all.png', bbox_inches='tight')
+        fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
                         
     sorted_sensors_contribution = attributes_influence.values[:]      
                         
@@ -220,15 +223,15 @@ def PCA_Analysis(mantained_variation, attributes_influence,norm=True,xyz_attribu
     plt.xticks(rotation=90)
     ax.grid()
  
-    if xyz_attributes == True:
-            fig.savefig('results/Attributes_Contribution_xyz_attributes.png') 
+    if laplace == True:
+        fig.savefig('results/Attributes_Contribution_Laplace.png', bbox_inches='tight') 
 
     else:
-        fig.savefig('results/Attributes_Contribution_all_attributes.png', bbox_inches='tight')
+        fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
 
     return
 
-def PCA_Projection(background_train,streaming_data, N_PCs,norm=True):
+def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0,laplace=True,):
     """Transform Data with PCA and normalize
     -- Input
     - Offline data
@@ -241,44 +244,36 @@ def PCA_Projection(background_train,streaming_data, N_PCs,norm=True):
     - Attributes Influence
     """
 
-    # Normalise streaming that taking the whole data-set in consideration
-
-    norm_background_train, norm_streaming_data = Normalisation(background_train,streaming_data) 
-
-    # Concatenating Train and streaming data sub-sets
-
-    data = np.concatenate((norm_background_train,norm_streaming_data), axis=0)
-
     # Calcules the PCA and projects the data-set into them
 
     pca= PCA(n_components = N_PCs)
-    pca.fit(norm_background_train)
+    pca.fit(background_train)
             
     # Calculates the total variance maintained by each PCs
             
     pca_variation = pca.explained_variance_ratio_ * 100
-
-    #print('Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
-
-    if norm==False:
-       # Projects data into the calculated PCs
-
-        proj_background_train = pca.transform(background_train)
-        proj_streaming_data = pca.transform(streaming_data)
-
+    
+    if laplace == True:
+        print('Laplace Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
+    
     else:
-        # Projects data into the calculated PCs
+        print('Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
 
-        proj_background_train = pca.transform(norm_background_train)
-        proj_streaming_data = pca.transform(norm_streaming_data)  
+    proj_background_train = pca.transform(background_train)
+    proj_streaming_data = pca.transform(streaming_data)
+ 
 
     ### Attributes analyses ###
 
-    data_df = pd.DataFrame(data, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
-                                    "px2","py2","pz2","E2","eta2","phi2",\
-                                    "pt2","Delta_R","M12","MET","S","C","HT",\
-                                    "A", "Min","Max","Mean","Var","Skw","Kurt",\
-                                    "M2","M3","M4","Bmin","Bmax"])
+    if laplace == True:
+        columns=list(maintained_features)
+
+    else:
+        columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
+                    "px2","py2","pz2","E2","eta2","phi2",\
+                    "pt2","Delta_R","M12","MET","S","C","HT",\
+                    "A", "Min","Max","Mean","Var","Skw","Kurt",\
+                    "M2","M3","M4","Bmin","Bmax"]
 
     # Gets eigen vectors information from the trained pca object
     eigen_matrix = np.array(pca.components_)
@@ -306,7 +301,7 @@ def PCA_Projection(background_train,streaming_data, N_PCs,norm=True):
 
     # Sorting attributes by their contribution values 
                         
-    attributes_contribution = pd.DataFrame (weighted_contribution, columns = data_df.columns)
+    attributes_contribution = pd.DataFrame (weighted_contribution, columns = columns)
                         
     attributes_contribution = attributes_contribution.sort_values(by=0, axis=1,ascending=False)
 
@@ -442,10 +437,9 @@ def statistics_attributes(data,xyz_attributes=True):
                                         bayes_min, bayes_max), axis=1)
     return output_data
 
-def SODA_Granularity_Iteration(offline_data,streaming_data,max_granularity,min_granularity,n_backgound,Iteration,norm=True,xyz_attributes=True):
 
+def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration,laplace):
     ## Formmating  Data
-
     offline_data = np.matrix(offline_data)
     L1 = len(offline_data)
 
@@ -453,117 +447,353 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,max_granularity,min_g
     
     data = np.concatenate((offline_data, streaming_data), axis=0)
 
-    delta = max_granularity - min_granularity + 1
-
     # Dreate data frames to save each iteration result.
 
-    detection_info = pd.DataFrame(np.zeros((delta, 6)), columns=['Granularity','True_Positive', 'True_Negative','False_Positive','False_Negative', 'N_Groups'])
+    detection_info = pd.DataFrame(np.zeros((1,6)).reshape((1,-1)), columns=['Granularity','True_Positive', 'True_Negative','False_Positive','False_Negative', 'N_Groups'])
 
-    performance_info = pd.DataFrame(np.zeros((delta, 8)), columns=['Granularity', 'Time_Elapsed',
+    performance_info = pd.DataFrame(np.zeros((1,8)).reshape((1,-1)), columns=['Granularity', 'Time_Elapsed',
                                                                 'Mean CPU_Percentage', 'Max CPU_Percentage',
                                                                 'Mean RAM_Percentage', 'Max RAM_Percentage',
                                                                 'Mean RAM_Usage_GB', 'Max RAM_Usage_GB'])
+
+    begin = datetime.now()
+
+    performance_thread = performance()
+    performance_thread.start()
     
-    for gra in range (min_granularity, max_granularity+1):
-        begin = datetime.now()
+    detection_info.loc[0,'Granularity'] = gra
+    performance_info.loc[0,'Granularity'] = gra
 
-        i = gra - min_granularity
+    Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
 
-        performance_thread = performance()
-        performance_thread.start()
+    out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Offline')
+
+    # Concatanating IDs and creating labels
         
-        detection_info.loc[i,'Granularity'] = gra
-        performance_info.loc[i,'Granularity'] = gra
+    label = np.zeros((len(streaming_data)))
+    label[n_backgound:] = 1
 
-        Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
-
-        out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Offline')
-
-        # Concatanating IDs and creating labels
-            
-        new_label = np.zeros((len(streaming_data)))
-        new_label[n_backgound:] = 1
-
-        new_decision = np.zeros((len(streaming_data)))
-        
-        Input['StreamingData'] = streaming_data
-        Input['SystemParams'] = out['SystemParams']
-        Input['AllData'] = data
+    decision = np.zeros((len(streaming_data)))
     
-        online_out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Evolving')
+    Input['StreamingData'] = streaming_data
+    Input['SystemParams'] = out['SystemParams']
+    Input['AllData'] = data
 
-        signal_centers = online_out['C']
-        soda_labels = online_out['IDX']
-        online_soda_labels = soda_labels[(L1):]
+    online_out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Evolving')
 
-        cloud_info = pd.DataFrame(np.zeros((len(signal_centers),4)),columns=['Total_Samples','Old_Samples','Percentage_Old_Samples', 'Percentage_of_Samples'])
+    signal_centers = online_out['C']
+    soda_labels = online_out['IDX']
+    online_soda_labels = soda_labels[(L1):]
+
+    cloud_info = pd.DataFrame(np.zeros((len(signal_centers),4)),columns=['Total_Samples','Old_Samples','Percentage_Old_Samples', 'Percentage_of_Samples'])
+    
+    for j in range (len(soda_labels)):
+        if j < L1:
+            cloud_info.loc[int(soda_labels[j]),'Old_Samples'] += 1
+
+        cloud_info.loc[int(soda_labels[j]),'Total_Samples'] += 1
+
+    cloud_info.loc[:,'Percentage_Old_Samples'] = cloud_info.loc[:,'Old_Samples'] * 100 / cloud_info.loc[:,'Total_Samples']
+    cloud_info.loc[:,'Percentage_of_Samples'] = cloud_info.loc[:,'Total_Samples'] * 100/ cloud_info.loc[:,'Total_Samples'].sum()
+
+    anomaly_clouds=[]
+    n_anomalies = 0
+
+    for j in range(len(signal_centers)):
+        if cloud_info.loc[j,'Percentage_Old_Samples'] == 0 :
+            n_anomalies += cloud_info.loc[j,'Total_Samples']
+            anomaly_clouds.append(j)
+    
+    if n_anomalies != 0:
+        for j in range(len(online_soda_labels)): 
+            if online_soda_labels[j] in anomaly_clouds:
+                decision[j] = 1
         
-        for j in range (len(soda_labels)):
-            if j < L1:
-                cloud_info.loc[int(soda_labels[j]),'Old_Samples'] += 1
-
-            cloud_info.loc[int(soda_labels[j]),'Total_Samples'] += 1
-
-        cloud_info.loc[:,'Percentage_Old_Samples'] = cloud_info.loc[:,'Old_Samples'] * 100 / cloud_info.loc[:,'Total_Samples']
-        cloud_info.loc[:,'Percentage_of_Samples'] = cloud_info.loc[:,'Total_Samples'] * 100/ cloud_info.loc[:,'Total_Samples'].sum()
-
-        anomaly_clouds=[]
-        n_anomalies = 0
-
-        for j in range(len(signal_centers)):
-            if cloud_info.loc[j,'Percentage_Old_Samples'] == 0 :
-                n_anomalies += cloud_info.loc[j,'Total_Samples']
-                anomaly_clouds.append(j)
-        
-        if n_anomalies != 0:
-            for j in range(len(online_soda_labels)): 
-                if online_soda_labels[j] in anomaly_clouds:
-                    new_decision[j] = 1
-            
-        for j in range(len(new_label)):
-            if new_label[j] == 1:
-                if new_decision[j] == new_label[j]:
-                    detection_info.loc[i,'True_Positive'] += 1
-                
-                else:
-                    detection_info.loc[i,'False_Negative'] += 1
-                    
-            else:
-                if new_decision[j] == new_label[j]:
-                    detection_info.loc[i,'True_Negative'] += 1
-                
-                else:
-                    detection_info.loc[i,'False_Positive'] += 1
-
-        
-        detection_info.loc[i, 'N_Groups'] = max(soda_labels)+1
-
-        performance_thread.stop()
-        performance_out = performance_thread.join()
-        final = datetime.now()
-        performance_info.loc[i,'Time_Elapsed'] = (final - begin)
-        performance_info.loc[i,'Mean CPU_Percentage'] = performance_out['mean_cpu_p']
-        performance_info.loc[i,'Max CPU_Percentage'] = performance_out['max_cpu_p']
-        performance_info.loc[i,'Mean RAM_Percentage'] = performance_out['mean_ram_p']
-        performance_info.loc[i,'Max RAM_Percentage'] = performance_out['max_ram_p']
-        performance_info.loc[i,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
-        performance_info.loc[i,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
-
-        if xyz_attributes == True:
-            if norm == True:
-                detection_info.to_csv('results/detection_info_xyz_attributes_normalised_' + str(Iteration) + '.csv', index=False)
-                performance_info.to_csv('results/performance_info_xyz_attributes_normalised_' + str(Iteration) + '.csv', index=False)
+    for j in range(len(label)):
+        if label[j] == 1:
+            if decision[j] == label[j]:
+                detection_info.loc[0,'True_Positive'] += 1
             
             else:
-                detection_info.to_csv('results/detection_info_xyz_attributes_raw_' + str(Iteration) + '.csv', index=False)
-                performance_info.to_csv('results/performance_info_xyz_attributes_raw_' + str(Iteration) + '.csv', index=False)
-
+                detection_info.loc[0,'False_Negative'] += 1
+                
         else:
-            if norm == True:
-                detection_info.to_csv('results/detection_info_all_attributes_normalised_' + str(Iteration) + '.csv', index=False)
-                performance_info.to_csv('results/performance_info_all_attributes_normalised_' + str(Iteration) + '.csv', index=False)
+            if decision[j] == label[j]:
+                detection_info.loc[0,'True_Negative'] += 1
             
             else:
-                detection_info.to_csv('results/detection_info_all_attributes_raw_' + str(Iteration) + '.csv', index=False)
-                performance_info.to_csv('results/performance_info_all_attributes_raw_' + str(Iteration) + '.csv', index=False)
-                
+                detection_info.loc[0,'False_Positive'] += 1
+
+    
+    detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
+
+    performance_thread.stop()
+    performance_out = performance_thread.join()
+    final = datetime.now()
+    performance_info.loc[0,'Time_Elapsed'] = (final - begin)
+    performance_info.loc[0,'Mean CPU_Percentage'] = performance_out['mean_cpu_p']
+    performance_info.loc[0,'Max CPU_Percentage'] = performance_out['max_cpu_p']
+    performance_info.loc[0,'Mean RAM_Percentage'] = performance_out['mean_ram_p']
+    performance_info.loc[0,'Max RAM_Percentage'] = performance_out['max_ram_p']
+    performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
+    performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
+
+    if laplace == 0:
+        detection_info.to_csv('results/detection_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+        performance_info.to_csv('results/performance_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    
+    else:
+        detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+        performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+
+def construct_W(X, neighbour_size = 5, t = 1):
+    n_samples, n_features = np.shape(X)
+    S=kneighbors_graph(X, neighbour_size+1, mode='distance',metric='euclidean')
+    S = (-1*(S*S))/(2*t*t)
+    S=S.tocsc()
+    S=expm(S) # exponential
+    S=S.tocsr()
+    #[1]  M. Belkin and P. Niyogi, “Laplacian Eigenmaps and Spectral Techniques for Embedding and Clustering,” Advances in Neural Information Processing Systems,
+    #Vol. 14, 2001. Following the paper to make the weights matrix symmetrix we use this method
+    bigger = np.transpose(S) > S
+    S = S - S.multiply(bigger) + np.transpose(S).multiply(bigger)
+    return S
+
+def LaplacianScore(X, neighbour_size = 5,  t = 1):
+    W = construct_W(X,t=t,neighbour_size=neighbour_size)
+    n_samples, n_features = np.shape(X)
+    
+    #construct the diagonal matrix
+    D=np.array(W.sum(axis=1))
+    D = scipy.sparse.diags(np.transpose(D), [0])
+    #construct graph Laplacian L
+    L=D-W.toarray()
+
+    #construct 1= [1,···,1]' 
+    I=np.ones((n_samples,n_features))
+
+    #construct fr' => fr= [fr1,...,frn]'
+    Xt = np.transpose(X)
+
+    #construct fr^=fr-(frt D I/It D I)I
+    t=np.matmul(np.matmul(Xt,D.toarray()),I)/np.matmul(np.matmul(np.transpose(I),D.toarray()),I)
+    t=t[:,0]
+    t=np.tile(t,(n_samples,1))
+    fr=X-t
+
+    #Compute Laplacian Score
+    fr_t=np.transpose(fr)
+    Lr=np.matmul(np.matmul(fr_t,L),fr)/np.matmul(np.dot(fr_t,D.toarray()),fr)
+
+    return np.diag(Lr)
+
+def distanceEntropy(d, mu = 0.5, beta=10):
+    """
+    As per: An Unsupervised Feature Selection Algorithm: Laplacian Score Combined with
+    Distance-based Entropy Measure, Rongye Liu 
+    """
+    if d<=mu:
+        result = (np.exp(beta * d) - np.exp(0))/(np.exp(beta * mu) - np.exp(0))
+    else:
+        result = (np.exp(beta * (1-d) )- np.exp(0))/(np.exp(beta *(1- mu)) - np.exp(0))              
+    return result
+
+def lse(data, ls):
+    """
+    This method takes as input a dataset, its laplacian scores for all features
+    and applies distance based entropy feature selection in order to identify
+    the best subset of features in the laplacian sense.
+    """
+    orderedFeatures = np.argsort(ls)
+    scores = {}
+    for i in range (2,len(ls)):
+        selectedFeatures = orderedFeatures[:i]
+        selectedFeaturesDataset = data[:, selectedFeatures]
+        d =sklearn.metrics.pairwise_distances(selectedFeaturesDataset, metric = 'euclidean' )
+        beta =10
+        mu = 0.5
+
+        d = preprocessing.MinMaxScaler().fit_transform(d)
+        e = np.vectorize(distanceEntropy)(d) 
+        e = preprocessing.MinMaxScaler().fit_transform(e)
+        totalEntropy= np.sum(e)
+        scores[i] = totalEntropy
+    bestFeatures = orderedFeatures[:list(scores.keys())[np.argmin(scores.values())]]
+    return bestFeatures
+
+def laplacian_score(xyz_background, xyz_signal, n_dimensions):
+
+    # Calculate Laplace Score for the background and signal
+    laplace_background = LaplacianScore(xyz_background)
+    laplace_signal = LaplacianScore(xyz_signal)
+
+    laplace_background = laplace_background.reshape((1,-1))
+    laplace_signal = laplace_signal.reshape((1,-1))
+
+    # Creating Data frames for the laplace score
+    laplace_background_df = pd.DataFrame (laplace_background, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
+                                        "px2","py2","pz2","E2","eta2","phi2",\
+                                        "pt2","Delta_R","M12","MET","S","C","HT",\
+                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
+                                        "M2","M3","M4","Bmin","Bmax"])
+    laplace_signal_df = pd.DataFrame (laplace_signal, columns=laplace_background_df.columns)
+
+    # Sorting backgorund attributes by their importance values 
+    laplace_background_df = laplace_background_df.sort_values(by=0, axis=1,ascending=False)
+    
+    # Sorting signal attributes regarding the background laplace score 
+    laplace_signal_df = laplace_signal_df[laplace_background_df.columns]
+
+    # Maintening the defined number of determined features
+    maintained_features = list(laplace_background_df.columns[:n_dimensions])
+
+    
+    main_laplace_background = pd.DataFrame(np.zeros((n_dimensions)).reshape((1,-1)),columns=maintained_features)
+    main_laplace_signal_df = pd.DataFrame(np.zeros((n_dimensions)).reshape((1,-1)),columns=maintained_features)
+
+    for col in maintained_features:
+        main_laplace_background.loc[0,col] = laplace_background_df.loc[0,col]
+        main_laplace_signal_df.loc[0,col] = laplace_signal_df.loc[0,col]
+    
+    # Ploting Results
+    
+    sorted_laplace_background = main_laplace_background.values[:]      
+    sorted_laplace_signal = main_laplace_signal_df.values[:]      
+
+    # Ploting backgound's Attributes importance
+
+    fig = plt.figure(figsize=[20,10])
+
+    fig.suptitle('Laplacian backgound\'s features importance scores', fontsize=20)
+
+    ax = fig.subplots(1,1)
+
+    sorted_laplace_background = sorted_laplace_background.ravel()
+    ax.bar(x=list(main_laplace_background.columns),height=sorted_laplace_background)
+    plt.ylabel('Relevance',fontsize = 20)
+    plt.xlabel('Attributes',fontsize = 20)
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+    plt.xticks(rotation=90)
+    ax.grid()    
+    fig.savefig('results/Laplacian_Background_Score.png', bbox_inches='tight') 
+    
+    # Ploting signal's Attributes importance
+
+    fig = plt.figure(figsize=[20,10])
+
+    fig.suptitle('Laplacian signal\'s features importance scores', fontsize=20)
+
+    ax = fig.subplots(1,1)
+
+    sorted_laplace_signal = sorted_laplace_signal.ravel()
+    ax.bar(x=list(main_laplace_signal_df.columns),height=sorted_laplace_signal)
+    plt.ylabel('Relevance',fontsize = 20)
+    plt.xlabel('Attributes',fontsize = 20)
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+    plt.xticks(rotation=90)
+    ax.grid()
+    fig.savefig('results/Laplacian_Signal_Score.png', bbox_inches='tight') 
+
+    return maintained_features
+
+def laplacian_score_2(xyz_background, xyz_signal):
+
+    # Calculate Laplace Score for the background and signal
+    
+    laplace_background = LaplacianScore(xyz_background)
+    laplace_signal = LaplacianScore(xyz_signal)
+    
+    # Apply Entropy to select features
+    
+    selectedFeatures = lse(xyz_background, laplace_background)
+
+    print('Number of Selected Features: ' + str(len(selectedFeatures)))
+    
+    # Reshape and sort matrixs to create data-frames
+    laplace_background = laplace_background.reshape((1,-1))
+    laplace_signal = laplace_signal.reshape((1,-1))
+
+    # Creating Data frames for the laplace score
+    laplace_background_df = pd.DataFrame (laplace_background, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
+                                        "px2","py2","pz2","E2","eta2","phi2",\
+                                        "pt2","Delta_R","M12","MET","S","C","HT",\
+                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
+                                        "M2","M3","M4","Bmin","Bmax"])
+    laplace_signal_df = pd.DataFrame (laplace_signal, columns=laplace_background_df.columns)
+
+    # Sorting backgorund attributes by their importance values 
+    laplace_background_df = laplace_background_df.sort_values(by=0, axis=1,ascending=True)
+    
+    # Sorting signal attributes regarding the background laplace score 
+    laplace_signal_df = laplace_signal_df[laplace_background_df.columns]     
+    
+    # Maintening the defined number of determined features
+    maintained_features = list(laplace_background_df.columns[:len(selectedFeatures)])
+    
+    main_laplace_background = pd.DataFrame(np.zeros((len(selectedFeatures))).reshape((1,-1)),columns=maintained_features)
+    main_laplace_signal_df = pd.DataFrame(np.zeros((len(selectedFeatures))).reshape((1,-1)),columns=maintained_features)
+
+    for col in maintained_features:
+        main_laplace_background.loc[0,col] = laplace_background_df.loc[0,col]
+        main_laplace_signal_df.loc[0,col] = laplace_signal_df.loc[0,col]
+    
+    # Ploting Results
+    
+    sorted_laplace_background = main_laplace_background.values[:]      
+    sorted_laplace_signal = main_laplace_signal_df.values[:]      
+
+    # Ploting backgound's Attributes importance
+
+    fig = plt.figure(figsize=[20,10])
+
+    fig.suptitle('Laplacian backgound\'s features importance scores', fontsize=20)
+
+    ax = fig.subplots(1,1)
+
+    sorted_laplace_background = sorted_laplace_background.ravel()
+    ax.bar(x=list(main_laplace_background.columns),height=sorted_laplace_background)
+    plt.ylabel('Relevance',fontsize = 20)
+    plt.xlabel('Attributes',fontsize = 20)
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+    plt.xticks(rotation=90)
+    ax.grid()    
+    fig.savefig('results/Laplacian_Background_Score.png', bbox_inches='tight') 
+    
+    # Ploting signal's Attributes importance
+
+    fig = plt.figure(figsize=[20,10])
+
+    fig.suptitle('Laplacian signal\'s features importance scores', fontsize=20)
+
+    ax = fig.subplots(1,1)
+
+    sorted_laplace_signal = sorted_laplace_signal.ravel()
+    ax.bar(x=list(main_laplace_signal_df.columns),height=sorted_laplace_signal)
+    plt.ylabel('Relevance',fontsize = 20)
+    plt.xlabel('Attributes',fontsize = 20)
+    plt.tick_params(axis='x', labelsize=18)
+    plt.tick_params(axis='y', labelsize=18)
+    plt.xticks(rotation=90)
+    ax.grid()
+    fig.savefig('results/Laplacian_Signal_Score.png', bbox_inches='tight') 
+
+    return maintained_features
+def laplacian_reduction(data,maintained_features):
+    
+    # Creating data frame for the original data attibutes
+    data_df = pd.DataFrame (data, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
+                                        "px2","py2","pz2","E2","eta2","phi2",\
+                                        "pt2","Delta_R","M12","MET","S","C","HT",\
+                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
+                                        "M2","M3","M4","Bmin","Bmax"])
+    
+    # Creating data frame with the selected features 
+    maintained_data = pd.DataFrame (np.zeros((len(data),len(maintained_features))),columns=maintained_features)
+    
+    for col in maintained_features:
+        maintained_data.loc[:,col] = data_df.loc[:,col]
+        
+    return maintained_data
