@@ -44,7 +44,7 @@ def main():
     iterations = 1
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 8
+    PROCESSES = 10
 
     # Number of Data-set divisions
     windows = 100
