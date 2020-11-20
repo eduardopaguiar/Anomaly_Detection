@@ -69,8 +69,6 @@ def main():
     signal = signal[1:,:]
 
     for n_i in range(iterations):
-        # DIVIDE BACKGROUND
-        #background, background_sample_id = dm.divide(background, windows,offline_samples)
 
         # Devide data-set into training and testing sub-sets
 
@@ -100,19 +98,15 @@ def main():
 
         xyz_streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=True)
         xyz_background_train = dm.statistics_attributes(background_train,xyz_attributes=True)
-        #xyz_signal = dm.statistics_attributes(signal,xyz_attributes=True)
 
         # Normalize Features
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
         norm_background_train = dm.Normalisation(xyz_background_train)
-        #norm_divided_signal = dm.Normalisation(xyz_signal)
-        #laplace_streaming_data = dm.laplacian_reduction(norm_xyz_streaming_data,maintained_features)
 
         # Calculates PCA and projects the sub-sets 
 
         proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_background_train,norm_xyz_streaming_data,N_PCs,laplace=False)
 
-        #if n_i == 0:
         # Plots PCA results
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence,laplace=False)
 
