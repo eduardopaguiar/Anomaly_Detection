@@ -70,7 +70,7 @@ def main():
     signal = signal[1:,:]
 
     background = check_array(background)
-    signa = check_array(signal)
+    signal = check_array(signal)
 
     for n_i in range(iterations):
 
