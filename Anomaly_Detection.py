@@ -49,9 +49,6 @@ def main():
     # Number of Data-set divisions
     windows = 100
 
-    # Number of events in offline and online phase
-    offline_samples = 100000
-
     # Firstly the model loads the background and signal data, then it removes the 
     # attributes first string line, in order to avoid NaN values in the array.
 
@@ -73,7 +70,7 @@ def main():
 
     for n_i in range(iterations):
         # DIVIDE BACKGROUND
-        background, background_sample_id = dm.divide(background, windows,offline_samples)
+        #background, background_sample_id = dm.divide(background, windows,offline_samples)
 
         # Devide data-set into training and testing sub-sets
 
@@ -88,8 +85,8 @@ def main():
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
 
-        np.savetxt('Analysed_Signal/Reduced_' + s_name,reduced_signal,delimiter=',')
-        np.savetxt('Analysed_Signal/Reduced_ID_' + s_name,signal_sample_id,delimiter=',')
+        np.savetxt('Analysed_Signal/Reduced_iteration_' + str(n_i) + s_name,reduced_signal,delimiter=',')
+        np.savetxt('Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + s_name,signal_sample_id,delimiter=',')
 
         # Concatenating Signal and the Test Background sub-set
 
@@ -103,12 +100,12 @@ def main():
 
         xyz_streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=True)
         xyz_background_train = dm.statistics_attributes(background_train,xyz_attributes=True)
-        xyz_signal = dm.statistics_attributes(signal,xyz_attributes=True)
+        #xyz_signal = dm.statistics_attributes(signal,xyz_attributes=True)
 
         # Normalize Features
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
         norm_background_train = dm.Normalisation(xyz_background_train)
-        norm_divided_signal = dm.Normalisation(xyz_signal)
+        #norm_divided_signal = dm.Normalisation(xyz_signal)
         #laplace_streaming_data = dm.laplacian_reduction(norm_xyz_streaming_data,maintained_features)
 
         # Calculates PCA and projects the sub-sets 
