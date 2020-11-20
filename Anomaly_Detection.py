@@ -41,10 +41,10 @@ def main():
     max_granularity = 30
 
     # Number of iteration
-    iterations = 10
+    iterations = 1
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 4
+    PROCESSES = 10
 
     # Number of Data-set divisions
     windows = 100
