@@ -16,7 +16,7 @@ import scipy.sparse
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn import preprocessing
 import sklearn
-
+from sklearn.utils.validation import check_array
 
 
 class performance(threading.Thread):
@@ -359,37 +359,69 @@ def statistics_attributes(data,xyz_attributes=True):
         # Minimum Value
         min_v = min_v.reshape(-1,1)
         
+        flag = check_array(momentum_data) # Minimum Value
+
         # Maximum Value
         max_v = max_v.reshape(-1,1)
-        
+
+        flag = check_array(momentum_data) # Maximum Value
+
         # Mean
         mean = mean.reshape(-1,1)
         
+        flag = check_array(momentum_data) # Mean
+
         # Variance
-        var = var.reshape(-1,1)
+        var = var.reshape(-1,1) 
         
+        flag = check_array(momentum_data) # Variance
+
         # Skewness
         skew = skew.reshape(-1,1)
         
+        flag = check_array(momentum_data) # Skewness
+
         # Kurtosis
         kurt = kurt.reshape(-1,1)
         
+        flag = check_array(momentum_data) # Kurtosis
+
         # 2nd Central Moment
         moment2 = stats.moment(momentum_data.transpose(), moment=2).reshape(-1,1)
         
+        flag = check_array(momentum_data) # 2nd Central Moment
+
         # 3rd Central Moment
         moment3 = stats.moment(momentum_data.transpose(), moment=3).reshape(-1,1)
         
+        flag = check_array(momentum_data) # 3rd Central Moment
+
         # 4th Central Moment
         moment4 = stats.moment(momentum_data.transpose(), moment=4).reshape(-1,1)
         
+        flag = check_array(momentum_data) # 4th Central Moment
+
         bayes_min = np.zeros(L).reshape(-1,1)
+
+        flag = check_array(momentum_data) # bayes_min
+
         bayes_max = np.zeros(L).reshape(-1,1)
+
+        flag = check_array(momentum_data) # bayes_max
+
         for i,d in enumerate(momentum_data):
             bayes = stats.bayes_mvs(d)
+
+            flag = check_array(momentum_data) # bayes
+
             bayes_min[i] = bayes[0][1][0]
+
+            flag = check_array(momentum_data) # bayes_min
+
             bayes_max[i] = bayes[0][1][1]
     
+            flag = check_array(momentum_data) # bayes_max
+
     else: 
         L, W = data.shape
 

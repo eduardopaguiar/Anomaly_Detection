@@ -67,10 +67,7 @@ def main():
     s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    signal = signal[1:,:]
-
-    background = check_array(background)
-    signal = check_array(signal)
+    #signal = signal[1:,:]
 
     for n_i in range(iterations):
 
@@ -78,17 +75,12 @@ def main():
 
         background_train, background_test = train_test_split(background, test_size=0.40, random_state=42)
 
-        background_train = check_array(background_train)
-        background_test = check_array(background_test)
-
         # Defining number of events Signal events on online phase.
 
         signal_online_samples = int(len(background_test)/99)
 
         # Devide online signal
         reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
-
-        reduced_signal = check_array(reduced_signal)
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
 
@@ -99,23 +91,14 @@ def main():
 
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
-        streaming_data = check_array(streaming_data)
-
         # Calculates Statistical attributes
 
         xyz_streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=True)
         xyz_background_train = dm.statistics_attributes(background_train,xyz_attributes=True)
 
-        xyz_streaming_data = check_array(xyz_streaming_data)
-        xyz_background_train = check_array(xyz_background_train)
-
-
         # Normalize Features
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
         norm_background_train = dm.Normalisation(xyz_background_train)
-
-        norm_xyz_streaming_data = check_array(norm_xyz_streaming_data)
-        norm_background_train = check_array(norm_background_train)
 
         # Calculates PCA and projects the sub-sets 
 
