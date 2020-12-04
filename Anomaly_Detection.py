@@ -13,20 +13,10 @@ from sklearn.model_selection import train_test_split
 import os
 import SODA
 import data_manipulation as dm
-from progress.bar import Bar
-import multiprocessing
 from sklearn.utils.validation import check_array
 
 #-------------------------------------------------------------------------------------#
 #-------------------------------------Main Code---------------------------------------#
-
-def calculate(func, args):
-    result = func(*args)
-    return result
-
-def calculatestar(args):
-    return calculate(*args)
-
 def main():
     #-------------------------------------------------------------------------------------#
     #---------------------------------Initiation Part-------------------------------------#
@@ -37,15 +27,12 @@ def main():
     N_PCs = 8
 
     # Range of SODA granularities
-    min_granularity = 1
+    min_granularity = 14
 
-    max_granularity = 2
+    max_granularity = 20
 
     # Number of iteration
     iterations = 2
-
-    # Number of process to create in the multiprocessing step
-    PROCESSES = 8
 
     # Number of Data-set divisions
     windows = 100
@@ -67,7 +54,7 @@ def main():
     s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    #signal = signal[1:,:]
+    signal = signal[1:,:]
 
     for n_i in range(iterations):
 
@@ -110,18 +97,10 @@ def main():
         # Plots PCA results
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
+        for gra in range(min_granularity, max_granularity + 1):
 
-        print('Creating pool with %d processes\n' % PROCESSES)
+            dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)
 
-        with multiprocessing.Pool(PROCESSES) as pool:
-
-            #
-            # Tests
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)]
-
-            pool.map(calculatestar, TASKS)
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
     main()       
