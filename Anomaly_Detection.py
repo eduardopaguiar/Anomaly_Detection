@@ -44,9 +44,6 @@ def main():
     # Number of iteration
     iterations = 2
 
-    # Number of process to create in the multiprocessing step
-    PROCESSES = 8
-
     # Number of Data-set divisions
     windows = 100
 
@@ -57,14 +54,14 @@ def main():
 
     ### Background    
 
-    b_name='Reduced_Input_Background_1.csv'
+    b_name='Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
 
-    s_name='Reduced_Input_Signal_1.csv'
+    s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
