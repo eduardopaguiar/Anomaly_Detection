@@ -198,11 +198,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     ax.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    if laplace == True:
-        fig.savefig('results/Percentage_of_Variance_Held_laplace.png', bbox_inches='tight') 
-
-    else:
-        fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
+    fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
                         
     sorted_sensors_contribution = attributes_influence.values[:]      
                         
@@ -222,16 +218,12 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     plt.tick_params(axis='y', labelsize=18)
     plt.xticks(rotation=90)
     ax.grid()
- 
-    if laplace == True:
-        fig.savefig('results/Attributes_Contribution_Laplace.png', bbox_inches='tight') 
-
-    else:
-        fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
+    
+    fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
 
     return
 
-def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0,laplace=True,):
+def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0):
     """Transform Data with PCA and normalize
     -- Input
     - Offline data
@@ -253,11 +245,8 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
             
     pca_variation = pca.explained_variance_ratio_ * 100
     
-    if laplace == True:
-        print('Laplace Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
-    
-    else:
-        print('Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
+
+    print('Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
 
     proj_background_train = pca.transform(background_train)
     proj_streaming_data = pca.transform(streaming_data)
@@ -265,15 +254,11 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
 
     ### Attributes analyses ###
 
-    if laplace == True:
-        columns=list(maintained_features)
-
-    else:
-        columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
-                    "px2","py2","pz2","E2","eta2","phi2",\
-                    "pt2","Delta_R","M12","MET","S","C","HT",\
-                    "A", "Min","Max","Mean","Var","Skw","Kurt",\
-                    "M2","M3","M4","Bmin","Bmax"]
+    columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
+                "px2","py2","pz2","E2","eta2","phi2",\
+                "pt2","Delta_R","M12","MET","S","C","HT",\
+                "A", "Min","Max","Mean","Var","Skw","Kurt",\
+                "M2","M3","M4"] #,"Bmin","Bmax"]
 
     # Gets eigen vectors information from the trained pca object
     eigen_matrix = np.array(pca.components_)
@@ -307,7 +292,7 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
 
     return proj_background_train, proj_streaming_data, pca_variation, attributes_contribution
 
-def statistics_attributes(data,xyz_attributes=True):
+def statistics_attributes(data):
     """
     When xyz_attributes=True:
        Concatenate with the data, statistics attributes for each event.
@@ -328,147 +313,84 @@ def statistics_attributes(data,xyz_attributes=True):
        - data [numpy.array]
        -- Output
        - output_data = data with adition of statistical features for each line [numpy.array]
-       
-    When xyz_attributes=False:
-       Concatenate with the data, statistics attributes for each event.
-       Only for momentum components (columns [0,1,2,7,8,9])
-       Currently Applied:
-        - Minimum Value
-        - Maximum Value
-        - Mean
-        - Variance
-        - Skewness
-        - Kurtosis
-        - 2nd Central Moment
-        - 3rd Central Moment
-        - 4th Central Moment
-        - Bayesian Confidence Interval (Min and Max)
-        More attributes may be added later
-       
-       -- Input
-       - data [numpy.array]
-       -- Output
-       - output_data = data with adition of statistical features for momentum each line [numpy.array]"""
-    if xyz_attributes == True:
-        momentum_data = np.concatenate((data[:, 0:3], data[:, 7:10]), axis=1)
-
-        L, W = data.shape
-
-        _, (min_v, max_v), mean, var, skew, kurt = stats.describe(momentum_data.transpose())
-        
-        # Minimum Value
-        min_v = min_v.reshape(-1,1)
-        
-        flag = check_array(momentum_data) # Minimum Value
-
-        # Maximum Value
-        max_v = max_v.reshape(-1,1)
-
-        flag = check_array(momentum_data) # Maximum Value
-
-        # Mean
-        mean = mean.reshape(-1,1)
-        
-        flag = check_array(momentum_data) # Mean
-
-        # Variance
-        var = var.reshape(-1,1) 
-        
-        flag = check_array(momentum_data) # Variance
-
-        # Skewness
-        skew = skew.reshape(-1,1)
-        
-        flag = check_array(momentum_data) # Skewness
-
-        # Kurtosis
-        kurt = kurt.reshape(-1,1)
-        
-        flag = check_array(momentum_data) # Kurtosis
-
-        # 2nd Central Moment
-        moment2 = stats.moment(momentum_data.transpose(), moment=2).reshape(-1,1)
-        
-        flag = check_array(momentum_data) # 2nd Central Moment
-
-        # 3rd Central Moment
-        moment3 = stats.moment(momentum_data.transpose(), moment=3).reshape(-1,1)
-        
-        flag = check_array(momentum_data) # 3rd Central Moment
-
-        # 4th Central Moment
-        moment4 = stats.moment(momentum_data.transpose(), moment=4).reshape(-1,1)
-        
-        flag = check_array(momentum_data) # 4th Central Moment
-
-        bayes_min = np.zeros(L).reshape(-1,1)
-
-        flag = check_array(momentum_data) # bayes_min
-
-        bayes_max = np.zeros(L).reshape(-1,1)
-
-        flag = check_array(momentum_data) # bayes_max
-
-        for i,d in enumerate(momentum_data):
-            bayes = stats.bayes_mvs(d)
-
-            flag = check_array(momentum_data) # bayes
-
-            bayes_min[i] = bayes[0][1][0]
-
-            flag = check_array(momentum_data) # bayes_min
-
-            bayes_max[i] = bayes[0][1][1]
+       """
     
-            flag = check_array(momentum_data) # bayes_max
+    momentum_data = np.concatenate((data[:, 0:3], data[:, 7:10]), axis=1)
 
-    else: 
-        L, W = data.shape
+    L, W = data.shape
 
-        _, (min_v, max_v), mean, var, skew, kurt = stats.describe(data.transpose())
-        
-        # Minimum Value
-        min_v = min_v.reshape(-1,1)
-        
-        # Maximum Value
-        max_v = max_v.reshape(-1,1)
-        
-        # Mean
-        mean = mean.reshape(-1,1)
-        
-        # Variance
-        var = var.reshape(-1,1)
-        
-        # Skewness
-        skew = skew.reshape(-1,1)
-        
-        # Kurtosis
-        kurt = kurt.reshape(-1,1)
-        
-        # 2nd Central Moment
-        moment2 = stats.moment(data.transpose(), moment=2).reshape(-1,1)
-        
-        # 3rd Central Moment
-        moment3 = stats.moment(data.transpose(), moment=3).reshape(-1,1)
-        
-        # 4th Central Moment
-        moment4 = stats.moment(data.transpose(), moment=4).reshape(-1,1)
-        
-        # Bayesian Confidence Interval
-        bayes_min = np.zeros(L).reshape(-1,1)
-        bayes_max = np.zeros(L).reshape(-1,1)
-        for i,d in enumerate(data):
-            bayes = stats.bayes_mvs(d)
-            bayes_min[i] = bayes[0][1][0]
-            bayes_max[i] = bayes[0][1][1]
+    _, (min_v, max_v), mean, var, skew, kurt = stats.describe(momentum_data.transpose())
     
+    # Minimum Value
+    min_v = min_v.reshape(-1,1)
     
-    output_data = np.concatenate((data, min_v, max_v, mean,
-                                        var, skew, kurt,
-                                        moment2, moment3, moment4,
-                                        bayes_min, bayes_max), axis=1)
+    min_v = check_array(min_v) # Minimum Value
+
+    # Maximum Value
+    max_v = max_v.reshape(-1,1)
+
+    max_v = check_array(max_v) # Maximum Value
+
+    # Mean
+    mean = mean.reshape(-1,1)
+    
+    mean = check_array(mean) # Mean
+
+    # Variance
+    var = var.reshape(-1,1) 
+    
+    var = check_array(var) # Variance
+
+    # Skewness
+    skew = skew.reshape(-1,1)
+    
+    skew = check_array(skew) # Skewness
+
+    # Kurtosis
+    kurt = kurt.reshape(-1,1)
+    
+    kurt = check_array(kurt) # Kurtosis
+
+    # 2nd Central Moment
+    moment2 = stats.moment(momentum_data.transpose(), moment=2).reshape(-1,1)
+    
+    moment2 = check_array(moment2) # 2nd Central Moment
+
+    # 3rd Central Moment
+    moment3 = stats.moment(momentum_data.transpose(), moment=3).reshape(-1,1)
+    
+    moment3 = check_array(moment3) # 3rd Central Moment
+
+    # 4th Central Moment
+    moment4 = stats.moment(momentum_data.transpose(), moment=4).reshape(-1,1)
+    
+    moment4 = check_array(moment4) # 4th Central Moment
+
+    """
+    bayes_min = np.zeros(L).reshape(-1,1)
+
+    bayes_min = check_array(momentum_data) # bayes_min
+
+    bayes_max = np.zeros(L).reshape(-1,1)
+
+    bayes_max = check_array(momentum_data) # bayes_max
+
+    for i,d in enumerate(momentum_data):
+        bayes = stats.bayes_mvs(d)
+
+        bayes = check_array(momentum_data) # bayes
+
+        bayes_min[i] = bayes[0][1][0]
+
+        bayes_min = check_array(momentum_data) # bayes_min
+
+        bayes_max[i] = bayes[0][1][1]
+
+        bayes_max = check_array(momentum_data) # bayes_max
+    """   
+    output_data = np.concatenate((data, min_v, max_v, mean, var, skew, kurt, moment2, moment3, moment4), axis=1)
+                                        #bayes_min, bayes_max
     return output_data
-
 
 def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration,laplace):
     ## Formmating  Data
@@ -577,255 +499,3 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     else:
         detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
         performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-
-def construct_W(X, neighbour_size = 5, t = 1):
-    n_samples, n_features = np.shape(X)
-    S=kneighbors_graph(X, neighbour_size+1, mode='distance',metric='euclidean')
-    S = (-1*(S*S))/(2*t*t)
-    S=S.tocsc()
-    S=expm(S) # exponential
-    S=S.tocsr()
-    #[1]  M. Belkin and P. Niyogi, “Laplacian Eigenmaps and Spectral Techniques for Embedding and Clustering,” Advances in Neural Information Processing Systems,
-    #Vol. 14, 2001. Following the paper to make the weights matrix symmetrix we use this method
-    bigger = np.transpose(S) > S
-    S = S - S.multiply(bigger) + np.transpose(S).multiply(bigger)
-    return S
-
-def LaplacianScore(X, neighbour_size = 5,  t = 1):
-    W = construct_W(X,t=t,neighbour_size=neighbour_size)
-    n_samples, n_features = np.shape(X)
-    
-    #construct the diagonal matrix
-    D=np.array(W.sum(axis=1))
-    D = scipy.sparse.diags(np.transpose(D), [0])
-    #construct graph Laplacian L
-    L=D-W.toarray()
-
-    #construct 1= [1,···,1]' 
-    I=np.ones((n_samples,n_features))
-
-    #construct fr' => fr= [fr1,...,frn]'
-    Xt = np.transpose(X)
-
-    #construct fr^=fr-(frt D I/It D I)I
-    t=np.matmul(np.matmul(Xt,D.toarray()),I)/np.matmul(np.matmul(np.transpose(I),D.toarray()),I)
-    t=t[:,0]
-    t=np.tile(t,(n_samples,1))
-    fr=X-t
-
-    #Compute Laplacian Score
-    fr_t=np.transpose(fr)
-    Lr=np.matmul(np.matmul(fr_t,L),fr)/np.matmul(np.dot(fr_t,D.toarray()),fr)
-
-    return np.diag(Lr)
-
-def distanceEntropy(d, mu = 0.5, beta=10):
-    """
-    As per: An Unsupervised Feature Selection Algorithm: Laplacian Score Combined with
-    Distance-based Entropy Measure, Rongye Liu 
-    """
-    if d<=mu:
-        result = (np.exp(beta * d) - np.exp(0))/(np.exp(beta * mu) - np.exp(0))
-    else:
-        result = (np.exp(beta * (1-d) )- np.exp(0))/(np.exp(beta *(1- mu)) - np.exp(0))              
-    return result
-
-def lse(data, ls):
-    """
-    This method takes as input a dataset, its laplacian scores for all features
-    and applies distance based entropy feature selection in order to identify
-    the best subset of features in the laplacian sense.
-    """
-    orderedFeatures = np.argsort(ls)
-    scores = {}
-    for i in range (2,len(ls)):
-        selectedFeatures = orderedFeatures[:i]
-        selectedFeaturesDataset = data[:, selectedFeatures]
-        d =sklearn.metrics.pairwise_distances(selectedFeaturesDataset, metric = 'euclidean' )
-        beta =10
-        mu = 0.5
-
-        d = preprocessing.MinMaxScaler().fit_transform(d)
-        e = np.vectorize(distanceEntropy)(d) 
-        e = preprocessing.MinMaxScaler().fit_transform(e)
-        totalEntropy= np.sum(e)
-        scores[i] = totalEntropy
-    bestFeatures = orderedFeatures[:list(scores.keys())[np.argmin(scores.values())]]
-    return bestFeatures
-
-def laplacian_score(xyz_background, xyz_signal, n_dimensions):
-
-    # Calculate Laplace Score for the background and signal
-    laplace_background = LaplacianScore(xyz_background)
-    laplace_signal = LaplacianScore(xyz_signal)
-
-    laplace_background = laplace_background.reshape((1,-1))
-    laplace_signal = laplace_signal.reshape((1,-1))
-
-    # Creating Data frames for the laplace score
-    laplace_background_df = pd.DataFrame (laplace_background, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
-                                        "px2","py2","pz2","E2","eta2","phi2",\
-                                        "pt2","Delta_R","M12","MET","S","C","HT",\
-                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
-                                        "M2","M3","M4","Bmin","Bmax"])
-    laplace_signal_df = pd.DataFrame (laplace_signal, columns=laplace_background_df.columns)
-
-    # Sorting backgorund attributes by their importance values 
-    laplace_background_df = laplace_background_df.sort_values(by=0, axis=1,ascending=False)
-    
-    # Sorting signal attributes regarding the background laplace score 
-    laplace_signal_df = laplace_signal_df[laplace_background_df.columns]
-
-    # Maintening the defined number of determined features
-    maintained_features = list(laplace_background_df.columns[:n_dimensions])
-
-    
-    main_laplace_background = pd.DataFrame(np.zeros((n_dimensions)).reshape((1,-1)),columns=maintained_features)
-    main_laplace_signal_df = pd.DataFrame(np.zeros((n_dimensions)).reshape((1,-1)),columns=maintained_features)
-
-    for col in maintained_features:
-        main_laplace_background.loc[0,col] = laplace_background_df.loc[0,col]
-        main_laplace_signal_df.loc[0,col] = laplace_signal_df.loc[0,col]
-    
-    # Ploting Results
-    
-    sorted_laplace_background = main_laplace_background.values[:]      
-    sorted_laplace_signal = main_laplace_signal_df.values[:]      
-
-    # Ploting backgound's Attributes importance
-
-    fig = plt.figure(figsize=[20,10])
-
-    fig.suptitle('Laplacian backgound\'s features importance scores', fontsize=20)
-
-    ax = fig.subplots(1,1)
-
-    sorted_laplace_background = sorted_laplace_background.ravel()
-    ax.bar(x=list(main_laplace_background.columns),height=sorted_laplace_background)
-    plt.ylabel('Relevance',fontsize = 20)
-    plt.xlabel('Attributes',fontsize = 20)
-    plt.tick_params(axis='x', labelsize=18)
-    plt.tick_params(axis='y', labelsize=18)
-    plt.xticks(rotation=90)
-    ax.grid()    
-    fig.savefig('results/Laplacian_Background_Score.png', bbox_inches='tight') 
-    
-    # Ploting signal's Attributes importance
-
-    fig = plt.figure(figsize=[20,10])
-
-    fig.suptitle('Laplacian signal\'s features importance scores', fontsize=20)
-
-    ax = fig.subplots(1,1)
-
-    sorted_laplace_signal = sorted_laplace_signal.ravel()
-    ax.bar(x=list(main_laplace_signal_df.columns),height=sorted_laplace_signal)
-    plt.ylabel('Relevance',fontsize = 20)
-    plt.xlabel('Attributes',fontsize = 20)
-    plt.tick_params(axis='x', labelsize=18)
-    plt.tick_params(axis='y', labelsize=18)
-    plt.xticks(rotation=90)
-    ax.grid()
-    fig.savefig('results/Laplacian_Signal_Score.png', bbox_inches='tight') 
-
-    return maintained_features
-
-def laplacian_score_2(xyz_background, xyz_signal):
-
-    # Calculate Laplace Score for the background and signal
-    
-    laplace_background = LaplacianScore(xyz_background)
-    laplace_signal = LaplacianScore(xyz_signal)
-    
-    # Apply Entropy to select features
-    
-    selectedFeatures = lse(xyz_background, laplace_background)
-
-    print('Number of Selected Features: ' + str(len(selectedFeatures)))
-    
-    # Reshape and sort matrixs to create data-frames
-    laplace_background = laplace_background.reshape((1,-1))
-    laplace_signal = laplace_signal.reshape((1,-1))
-
-    # Creating Data frames for the laplace score
-    laplace_background_df = pd.DataFrame (laplace_background, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
-                                        "px2","py2","pz2","E2","eta2","phi2",\
-                                        "pt2","Delta_R","M12","MET","S","C","HT",\
-                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
-                                        "M2","M3","M4","Bmin","Bmax"])
-    laplace_signal_df = pd.DataFrame (laplace_signal, columns=laplace_background_df.columns)
-
-    # Sorting backgorund attributes by their importance values 
-    laplace_background_df = laplace_background_df.sort_values(by=0, axis=1,ascending=True)
-    
-    # Sorting signal attributes regarding the background laplace score 
-    laplace_signal_df = laplace_signal_df[laplace_background_df.columns]     
-    
-    # Maintening the defined number of determined features
-    maintained_features = list(laplace_background_df.columns[:len(selectedFeatures)])
-    
-    main_laplace_background = pd.DataFrame(np.zeros((len(selectedFeatures))).reshape((1,-1)),columns=maintained_features)
-    main_laplace_signal_df = pd.DataFrame(np.zeros((len(selectedFeatures))).reshape((1,-1)),columns=maintained_features)
-
-    for col in maintained_features:
-        main_laplace_background.loc[0,col] = laplace_background_df.loc[0,col]
-        main_laplace_signal_df.loc[0,col] = laplace_signal_df.loc[0,col]
-    
-    # Ploting Results
-    
-    sorted_laplace_background = main_laplace_background.values[:]      
-    sorted_laplace_signal = main_laplace_signal_df.values[:]      
-
-    # Ploting backgound's Attributes importance
-
-    fig = plt.figure(figsize=[20,10])
-
-    fig.suptitle('Laplacian backgound\'s features importance scores', fontsize=20)
-
-    ax = fig.subplots(1,1)
-
-    sorted_laplace_background = sorted_laplace_background.ravel()
-    ax.bar(x=list(main_laplace_background.columns),height=sorted_laplace_background)
-    plt.ylabel('Relevance',fontsize = 20)
-    plt.xlabel('Attributes',fontsize = 20)
-    plt.tick_params(axis='x', labelsize=18)
-    plt.tick_params(axis='y', labelsize=18)
-    plt.xticks(rotation=90)
-    ax.grid()    
-    fig.savefig('results/Laplacian_Background_Score.png', bbox_inches='tight') 
-    
-    # Ploting signal's Attributes importance
-
-    fig = plt.figure(figsize=[20,10])
-
-    fig.suptitle('Laplacian signal\'s features importance scores', fontsize=20)
-
-    ax = fig.subplots(1,1)
-
-    sorted_laplace_signal = sorted_laplace_signal.ravel()
-    ax.bar(x=list(main_laplace_signal_df.columns),height=sorted_laplace_signal)
-    plt.ylabel('Relevance',fontsize = 20)
-    plt.xlabel('Attributes',fontsize = 20)
-    plt.tick_params(axis='x', labelsize=18)
-    plt.tick_params(axis='y', labelsize=18)
-    plt.xticks(rotation=90)
-    ax.grid()
-    fig.savefig('results/Laplacian_Signal_Score.png', bbox_inches='tight') 
-
-    return maintained_features
-def laplacian_reduction(data,maintained_features):
-    
-    # Creating data frame for the original data attibutes
-    data_df = pd.DataFrame (data, columns=["px1","py1","pz1","E1","eta1","phi1","pt1",\
-                                        "px2","py2","pz2","E2","eta2","phi2",\
-                                        "pt2","Delta_R","M12","MET","S","C","HT",\
-                                        "A", "Min","Max","Mean","Var","Skw","Kurt",\
-                                        "M2","M3","M4","Bmin","Bmax"])
-    
-    # Creating data frame with the selected features 
-    maintained_data = pd.DataFrame (np.zeros((len(data),len(maintained_features))),columns=maintained_features)
-    
-    for col in maintained_features:
-        maintained_data.loc[:,col] = data_df.loc[:,col]
-        
-    return maintained_data
