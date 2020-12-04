@@ -57,14 +57,14 @@ def main():
 
     ### Background    
 
-    b_name='Input_Background_1.csv'
+    b_name='Reduced_Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
 
-    s_name='Input_Signal_1.csv'
+    s_name='Reduced_Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -111,16 +111,12 @@ def main():
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
 
-        print('Creating pool with %d processes\n' % PROCESSES)
+        print('Creating pool with %d processes\n' %(max_granularity - min_granularity + 1))
 
-        with multiprocessing.Pool(PROCESSES) as pool:
+        for gra in range(min_granularity, max_granularity + 1):
+            p = multiprocessing.Process(target=dm.SODA_Granularity_Iteration, args=(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i))
 
-            #
-            # Tests
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)]
-
-            pool.map(calculatestar, TASKS)
+            p.start()
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
