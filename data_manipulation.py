@@ -177,7 +177,7 @@ def Normalisation(data):
 
     return norm_data
 
-def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
+def PCA_Analysis(mantained_variation, attributes_influence):
     """Create and save the PCA model
     -- Input
     - mantained_variation = variation mantained for each PC
@@ -392,7 +392,7 @@ def statistics_attributes(data):
                                         #bayes_min, bayes_max
     return output_data
 
-def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration,laplace):
+def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration):
     ## Formmating  Data
     offline_data = np.matrix(offline_data)
     L1 = len(offline_data)
@@ -491,11 +491,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Max RAM_Percentage'] = performance_out['max_ram_p']
     performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
     performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
-
-    if laplace == 0:
-        detection_info.to_csv('results/detection_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-        performance_info.to_csv('results/performance_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
     
-    else:
-        detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-        performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    detection_info.to_csv('results/detection_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    performance_info.to_csv('results/performance_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
