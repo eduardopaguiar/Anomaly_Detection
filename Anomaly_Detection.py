@@ -57,14 +57,14 @@ def main():
 
     ### Background    
 
-    b_name='Input_Background_1.csv'
+    b_name='Reduced_Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
 
-    s_name='Input_Signal_1.csv'
+    s_name='Reduced_Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -91,21 +91,24 @@ def main():
 
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
+        norm_streaming_data = dm.Normalisation(streaming_data)
+        norm_background_train = dm.Normalisation(background_train)
+
         # Calculates Statistical attributes
 
-        xyz_streaming_data = dm.statistics_attributes(streaming_data,xyz_attributes=True)
-        xyz_background_train = dm.statistics_attributes(background_train,xyz_attributes=True)
+        xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
+        xyz_background_train = dm.statistics_attributes(norm_background_train)
 
         # Normalize Features
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
-        norm_background_train = dm.Normalisation(xyz_background_train)
+        norm_xyz_background_train = dm.Normalisation(xyz_background_train)
 
         # Calculates PCA and projects the sub-sets 
 
-        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_background_train,norm_xyz_streaming_data,N_PCs,laplace=False)
+        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
 
         # Plots PCA results
-        dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence,laplace=False)
+        dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
 
         print('Creating pool with %d processes\n' % PROCESSES)
