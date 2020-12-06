@@ -28,12 +28,8 @@ def pi_calculator(Uniquesample, mode):
         DT1 = X1 - sum(np.power(AA1,2))
         aux = []
         for i in range(UN): aux.append(AA1)
-        
-        #aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
-        #uspi = np.sum(np.power(aux2,2),axis=1)+DT1
-        
-        uspi = np.power(cdist(Uniquesample, aux, mode),2)+DT1
-        uspi = uspi[:,0]
+        aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
+        uspi = np.sum(np.power(aux2,2),axis=1)+DT1
         
     if mode == 'minkowski':
         AA1 = Uniquesample.mean(0)
@@ -241,7 +237,7 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     Density_1 = uspi1/sum_uspi1
     uspi2 = pi_calculator(Hypermean,'cosine')
     sum_uspi2 = np.sum(uspi2)
-    Density_2 = uspi1/sum_uspi2;
+    Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport
     return Hyper_GD
 
@@ -289,6 +285,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
                 'AvM': AvD1,
                 'AvA': AvD2,
                 'GridSize': N}
+
         
     if Mode == 'Evolving':
         distancetype = Input['DistanceType']
