@@ -37,12 +37,12 @@ def main():
     N_PCs = 8
 
     # Range of SODA granularities
-    min_granularity = 1
+    min_granularity = 14
 
-    max_granularity = 2
+    max_granularity = 14
 
     # Number of iteration
-    iterations = 2
+    iterations = 33
 
     # Number of Data-set divisions
     windows = 100
