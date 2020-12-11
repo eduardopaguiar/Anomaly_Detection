@@ -1,70 +1,70 @@
 from scipy.spatial.distance import pdist, cdist, squareform
 import math
 import pandas as pd
-import numpy as np
+import cupy as cp
 
 def grid_set(data, N):
 
     _ , W = data.shape
     AvD1 = data.mean(0)
-    X1 = np.mean(np.sum(np.power(data,2),axis=1))
-    grid_trad = np.sqrt(2*(X1 - AvD1*AvD1.T))/N
-    Xnorm = np.sqrt(np.sum(np.power(data,2),axis=1))
+    X1 = cp.mean(cp.sum(cp.power(data,2),axis=1))
+    grid_trad = cp.sqrt(2*(X1 - AvD1*AvD1.T))/N
+    Xnorm = cp.sqrt(cp.sum(cp.power(data,2),axis=1))
     aux = Xnorm
     for i in range(W-1):
-        aux = np.insert(aux,0,Xnorm.T,axis=1)
+        aux = cp.insert(aux,0,Xnorm.T,axis=1)
     data = data / aux
-    seq = np.argwhere(np.isnan(data))
+    seq = cp.argwhere(cp.isnan(data))
     if tuple(seq[::]): data[tuple(seq[::])] = 1
     AvD2 = data.mean(0)
-    grid_angl = np.sqrt(1-AvD2*AvD2.T)/N
+    grid_angl = cp.sqrt(1-AvD2*AvD2.T)/N
     return X1, AvD1, AvD2, grid_trad, grid_angl
 
 def pi_calculator(Uniquesample, mode):
     UN, W = Uniquesample.shape
     if mode == 'euclidean' or mode == 'mahalanobis' or mode == 'cityblock' or mode == 'chebyshev' or mode == 'canberra':
         AA1 = Uniquesample.mean(0)
-        X1 = sum(sum(np.power(Uniquesample,2)))/UN
-        DT1 = X1 - sum(np.power(AA1,2))
+        X1 = sum(sum(cp.power(Uniquesample,2)))/UN
+        DT1 = X1 - sum(cp.power(AA1,2))
         aux = []
         for i in range(UN): aux.append(AA1)
         
         #aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
-        #uspi = np.sum(np.power(aux2,2),axis=1)+DT1
+        #uspi = cp.sum(cp.power(aux2,2),axis=1)+DT1
         
-        uspi = np.power(cdist(Uniquesample, aux, mode),2)+DT1
+        uspi = cp.power(cdist(Uniquesample, aux, mode),2)+DT1
         uspi = uspi[:,0]
         
     if mode == 'minkowski':
         AA1 = Uniquesample.mean(0)
-        X1 = sum(sum(np.power(Uniquesample,2)))/UN
-        DT1 = X1 - sum(np.power(AA1,2))
-        aux = np.matrix(AA1)
-        for i in range(UN-1): aux = np.insert(aux,0,AA1,axis=0)
-        aux = np.array(aux)
+        X1 = sum(sum(cp.power(Uniquesample,2)))/UN
+        DT1 = X1 - sum(cp.power(AA1,2))
+        aux = cp.matrix(AA1)
+        for i in range(UN-1): aux = cp.insert(aux,0,AA1,axis=0)
+        aux = cp.array(aux)
         
-        uspi = np.power(cdist(Uniquesample, aux, mode, p=1.5),2)+DT1
+        uspi = cp.power(cdist(Uniquesample, aux, mode, p=1.5),2)+DT1
         uspi = uspi[:,0]
     
     if mode == 'cosine':
-        Xnorm = np.matrix(np.sqrt(np.sum(np.power(Uniquesample,2),axis=1))).T
+        Xnorm = cp.matrix(cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1))).T
         aux2 = Xnorm
         for i in range(W-1):
-            aux2 = np.insert(aux2,0,Xnorm.T,axis=1)
+            aux2 = cp.insert(aux2,0,Xnorm.T,axis=1)
         Uniquesample1 = Uniquesample / aux2
-        AA2 = np.mean(Uniquesample1,0)
+        AA2 = cp.mean(Uniquesample1,0)
         X2 = 1
-        DT2 = X2 - np.sum(np.power(AA2,2))
+        DT2 = X2 - cp.sum(cp.power(AA2,2))
         aux = []
         for i in range(UN): aux.append(AA2)
         aux2 = [Uniquesample1[i]-aux[i] for i in range(UN)]
-        uspi = np.sum(np.sum(np.power(aux2,2),axis=1),axis=1)+DT2
+        uspi = cp.sum(cp.sum(cp.power(aux2,2),axis=1),axis=1)+DT2
         
     return uspi
 
 def Globaldensity_Calculator(data, distancetype):
-    Uniquesample, J, K = np.unique(data, axis=0, return_index=True, return_inverse=True)
-    Frequency, _ = np.histogram(K,bins=len(J))
+    Uniquesample, J, K = cp.unique(data, axis=0, return_index=True, return_inverse=True)
+    Frequency, _ = cp.histogram(K,bins=len(J))
     uspi1 = pi_calculator(Uniquesample, distancetype)
     sum_uspi1 = sum(uspi1)
     Density_1 = uspi1 / sum_uspi1
@@ -95,13 +95,13 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
         else:
             a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
         
-        b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        distance = np.array([a[0],b[0]]).T
+        b = cp.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
+        distance = cp.array([a[0],b[0]]).T
         SQ = []
         for j,d in enumerate(distance):
             if d[0] < interval1 and d[1] < interval2:
                 SQ.append(j)
-        #SQ = np.argwhere(distance[::,0]<interval1 and (distance[::,1]<interval2))
+        #SQ = cp.argwhere(distance[::,0]<interval1 and (distance[::,1]<interval2))
         COUNT = len(SQ)
         if COUNT == 0:
             BOX.append(Uniquesample[i])
@@ -112,7 +112,7 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
             BOXMT.append(MMtypicality[i])
         if COUNT >= 1:
             DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2 # pylint: disable=E1136  # pylint/issues/3139
-            b = np.argmin(DIS)
+            b = cp.argmin(DIS)
             BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
             BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample[i]/BOX_S[SQ[b]]
             BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
@@ -129,7 +129,7 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
     else:
         distance1 = squareform(pdist(BOX_miu,metric=distancetype))        
     
-    distance2 = np.sqrt(squareform(pdist(BOX_miu,metric='cosine')))
+    distance2 = cp.sqrt(squareform(pdist(BOX_miu,metric='cosine')))
     for i in range(NB):
         seq = []
         for j,(d1,d2) in enumerate(zip(distance1[i],distance2[i])):
@@ -143,8 +143,8 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
 
 def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     L, W = Uniquesample.shape
-    Membership = np.zeros((L,ModelNumber))
-    Members = np.zeros((L,ModelNumber*W))
+    Membership = cp.zeros((L,ModelNumber))
+    Members = cp.zeros((L,ModelNumber*W))
     Count = []
 
     if distancetype == 'minkowski':
@@ -152,7 +152,7 @@ def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,g
     else:
         distance1 = cdist(Uniquesample,Center_samples, metric=distancetype)/grid_trad
 
-    distance2 = np.sqrt(cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
+    distance2 = cp.sqrt(cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
     distance3 = distance1 + distance2
     B = distance3.argmin(1)
     for i in range(ModelNumber):
@@ -168,37 +168,37 @@ def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,g
 
 def data_standardization(data,X_global,mean_global,mean_global2,k):
     mean_global_new = k/(k+1)*mean_global+data/(k+1)
-    X_global_new = k/(k+1)*X_global+np.sum(np.power(data,2))/(k+1)
-    mean_global2_new = k/(k+1)*mean_global2+data/(k+1)/np.sqrt(np.sum(np.power(data,2)))
+    X_global_new = k/(k+1)*X_global+cp.sum(cp.power(data,2))/(k+1)
+    mean_global2_new = k/(k+1)*mean_global2+data/(k+1)/cp.sqrt(cp.sum(cp.power(data,2)))
     return X_global_new, mean_global_new, mean_global2_new
 
 def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
-    distance = np.zeros((NB,2))
+    distance = cp.zeros((NB,2))
     COUNT = 0
     SQ = []
     for i in range(NB):
         distance[i,0] = pdist([list(BOX_miu[i]), data.tolist()[0]],'euclidean')
-        distance[i,1] = np.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
+        distance[i,1] = cp.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
         if distance[i,0] < intervel1 and distance[i,1] < intervel2:
             COUNT += 1
             SQ.append(i)
             
     if COUNT == 0:
-        Box_new = np.concatenate((Box, np.array(data)))
+        Box_new = cp.concatenate((Box, cp.array(data)))
         NB_new = NB+1
-        BOX_S_new = np.concatenate((BOX_S, np.array([1])))
-        #BOX_S_new = np.array(BOX_S)
-        BOX_miu_new = np.concatenate((BOX_miu, np.array(data)))
+        BOX_S_new = cp.concatenate((BOX_S, cp.array([1])))
+        #BOX_S_new = cp.array(BOX_S)
+        BOX_miu_new = cp.concatenate((BOX_miu, cp.array(data)))
     if COUNT>=1:
-        DIS = np.zeros((COUNT,1))
+        DIS = cp.zeros((COUNT,1))
         for j in range(COUNT):
             DIS[j] = distance[SQ[j],0] + distance[SQ[j],1]
-        a = np.amin(DIS)
-        b = int(np.where(DIS == a)[0])
+        a = cp.amin(DIS)
+        b = int(cp.where(DIS == a)[0])
         Box_new = Box
         NB_new = NB
-        BOX_S_new = np.array(BOX_S)
-        BOX_miu_new = np.array(BOX_miu)
+        BOX_S_new = cp.array(BOX_S)
+        BOX_miu_new = cp.array(BOX_miu)
         BOX_S_new[SQ[b]] = BOX_S[SQ[b]] + 1
         BOX_miu_new[SQ[b]] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b]]+data/BOX_S_new[SQ[b]]
     
@@ -217,17 +217,17 @@ def Chessboard_online_merge(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
         for ii in range(NB):
             seq1 = [i for i in range(NB) if i != ii]
             distance1 = cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'euclidean')
-            distance2 = np.sqrt(cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
+            distance2 = cp.sqrt(cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
             for jj in range(NB-1):
                 if distance1[0,jj] < threshold1 and distance2[0,jj] < threshold2:
                     CC = 1
                     NB -= 1
-                    Box = np.delete(Box, (ii), axis=0)
+                    Box = cp.delete(Box, (ii), axis=0)
                     BOX_miu[seq1[jj]] = BOX_miu[seq1[jj]]*BOX_S[seq1[jj]]/(BOX_S[seq1[jj]]+BOX_S[ii])+BOX_miu[ii]*BOX_S[ii]/(BOX_S[seq1[jj]]+BOX_S[ii])
                     
                     BOX_S[seq1[jj]] = BOX_S[seq1[jj]] + BOX_S[ii]
-                    BOX_miu = np.delete(BOX_miu, (ii), axis=0)
-                    BOX_S = np.delete(BOX_S, (ii), axis=0)
+                    BOX_miu = cp.delete(BOX_miu, (ii), axis=0)
+                    BOX_S = cp.delete(BOX_S, (ii), axis=0)
                     
                     break
             if CC == 1:
@@ -237,11 +237,11 @@ def Chessboard_online_merge(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
 
 def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     uspi1 = pi_calculator(Hypermean,'euclidean')
-    sum_uspi1 = np.sum(uspi1)
+    sum_uspi1 = cp.sum(uspi1)
     Density_1 = uspi1/sum_uspi1
     uspi2 = pi_calculator(Hypermean,'cosine')
-    sum_uspi2 = np.sum(uspi2)
-    Density_2 = uspi1/sum_uspi2;
+    sum_uspi2 = cp.sum(uspi2)
+    Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport
     return Hyper_GD
 
@@ -252,11 +252,11 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
     
     for ii in range(NB):
         Reference = BOX_miu[ii]
-        distance1 = np.zeros((NB,1))
-        distance2 = np.zeros((NB,1))
+        distance1 = cp.zeros((NB,1))
+        distance2 = cp.zeros((NB,1))
         for i in range(NB):
             distance1[i] = pdist([list(Reference), list(BOX_miu[i])], 'euclidean')
-            distance2[i] = np.sqrt(pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
+            distance2[i] = cp.sqrt(pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
         
         Chessblocak_typicality = []
         for i in range(NB):
@@ -268,12 +268,12 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
     
     return Centers,ModeNumber
 
-def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
+def SelfOrganisedDirectionAwareDataPartitioning(Icput, Mode):
     if Mode == 'Offline':
-        data = Input['StaticData']
+        data = cp.asarray(Icput['StaticData'])
         L, W = data.shape
-        N = Input['GridSize']
-        distancetype = Input['DistanceType']
+        N = Icput['GridSize']
+        distancetype = Icput['DistanceType']
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division(Uniquesample,GD,grid_trad,grid_angl, distancetype)
@@ -291,10 +291,10 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
                 'GridSize': N}
         
     if Mode == 'Evolving':
-        distancetype = Input['DistanceType']
-        Data2 = Input['StreamingData']
-        data = Input['AllData']
-        Boxparameter = Input['SystemParams']
+        distancetype = Icput['DistanceType']
+        Data2 = Icput['StreamingData']
+        data = Icput['AllData']
+        Boxparameter = Icput['SystemParams']
         BOX = Boxparameter['BOX']
         BOX_miu = Boxparameter['BOX_miu']
         BOX_S = Boxparameter['BOX_S']
@@ -308,8 +308,8 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         
         for k in range(L2):
             XM, AvM, AvA = data_standardization(Data2[k,:], XM, AvM, AvA, k+L1)
-            interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
-            interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
+            interval1 = cp.sqrt(2*(XM-cp.sum(cp.power(AvM,2))))/N
+            interval2 = cp.sqrt(1-cp.sum(cp.power(AvA,2)))/N
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_division(Data2[k,:], BOX, BOX_miu, BOX_S, NB, interval1, interval2)
             BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
         
