@@ -47,14 +47,27 @@ def pi_calculator(Uniquesample, mode):
         aux2 = Xnorm
         for i in range(W-1):
             aux2 = np.insert(aux2,0,Xnorm.T,axis=1)
+        print(aux2.shape)
         Uniquesample1 = Uniquesample / aux2
+        print(Uniquesample1.shape)
         AA2 = np.mean(Uniquesample1,0)
         X2 = 1
         DT2 = X2 - np.sum(np.power(AA2,2))
         aux = []
         for i in range(UN): aux.append(AA2)
+        print(np.shape(aux))
         aux2 = [Uniquesample1[i]-aux[i] for i in range(UN)]
-        uspi = np.sum(np.sum(np.power(aux2,2),axis=1),axis=1)+DT2
+
+        print(aux2)
+
+        a = np.power(aux2,2)
+        
+        b = np.sum(a,axis=1)
+        print(b)
+        print(b.shape)
+        c = np.sum(b,axis=1)
+        print(c.shape)
+        uspi = c+DT2
         
     return uspi
 
