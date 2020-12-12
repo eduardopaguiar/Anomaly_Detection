@@ -39,13 +39,13 @@ def main():
     # Range of SODA granularities
     min_granularity = 1
 
-    max_granularity = 2
+    max_granularity = 1
 
     # Number of iteration
-    iterations = 2
+    iterations = 1
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 4
+    PROCESSES = 1
 
     # Number of Data-set divisions
     windows = 100
@@ -111,6 +111,8 @@ def main():
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
 
+        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i,1)
+        """
         print('Creating pool with %d processes\n' % PROCESSES)
 
         with multiprocessing.Pool(PROCESSES) as pool:
@@ -121,6 +123,8 @@ def main():
             TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)]
 
             pool.map(calculatestar, TASKS)
+
+            """
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()

@@ -17,6 +17,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn import preprocessing
 import sklearn
 from sklearn.utils.validation import check_array
+import cupy as cp
 
 
 class performance(threading.Thread):
@@ -394,10 +395,10 @@ def statistics_attributes(data):
 
 def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration,laplace):
     ## Formmating  Data
-    offline_data = np.matrix(offline_data)
+    offline_data = cp.asarray(offline_data)
     L1 = len(offline_data)
 
-    streaming_data = np.matrix(streaming_data)
+    streaming_data = cp.asarray(streaming_data)
     
     data = np.concatenate((offline_data, streaming_data), axis=0)
 
