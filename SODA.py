@@ -99,11 +99,7 @@ def pi_calculator(Uniquesample, mode):
 def Globaldensity_Calculator(data, distancetype):
     data = cp.asnumpy(data)
     Uniquesample, J, K = np.unique(data, axis=0, return_index=True, return_inverse=True)
-    
     Uniquesample =  cp.asarray(Uniquesample)
-    #    J =  cp.asarray(J)
-    #    K =  cp.asarray(K)
-
     Frequency, _ = np.histogram(K,bins=len(J))
     Frequency = cp.asarray(Frequency)
     uspi1 = pi_calculator(Uniquesample, distancetype)
@@ -134,9 +130,10 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     for i in range(W,L):
         
         a = cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu)
-        
+        print("a.shape",a.shape)
         b = cp.sqrt(cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        distance = cp.array([a[0],b[0]]).T
+        print("b.shape",b.shape)
+        distance = cp.stack((a[0],b[0])).T
         SQ = []
         for j,d in enumerate(distance):
             if d[0] < interval1 and d[1] < interval2:
@@ -281,7 +278,7 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     Density_1 = uspi1/sum_uspi1
     uspi2 = pi_calculator(Hypermean,'cosine')
     sum_uspi2 = cp.sum(uspi2)
-    Density_2 = uspi1/sum_uspi2;
+    Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport
     return Hyper_GD
 
