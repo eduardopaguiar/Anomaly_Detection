@@ -47,26 +47,19 @@ def pi_calculator(Uniquesample, mode):
         aux2 = Xnorm
         for i in range(W-1):
             aux2 = np.insert(aux2,0,Xnorm.T,axis=1)
-        print(aux2.shape)
         Uniquesample1 = Uniquesample / aux2
-        print(Uniquesample1.shape)
         AA2 = np.mean(Uniquesample1,0)
         X2 = 1
         DT2 = X2 - np.sum(np.power(AA2,2))
         aux = []
         for i in range(UN): aux.append(AA2)
-        print(np.shape(aux))
         aux2 = [Uniquesample1[i]-aux[i] for i in range(UN)]
 
-        print(aux2)
 
         a = np.power(aux2,2)
         
         b = np.sum(a,axis=1)
-        print(b)
-        print(b.shape)
         c = np.sum(b,axis=1)
-        print(c.shape)
         uspi = c+DT2
         
     return uspi
@@ -103,9 +96,13 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
             a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
         else:
             a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
-        
+        print("A.shape",Uniquesample[i].reshape(1,-1).shape)
+        print("B.shape (",len(BOX_miu),')')
+        print("a.shape",a.shape)
         b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
+        print("b.shape",b.shape)
         distance = np.array([a[0],b[0]]).T
+        print("distance.shape",distance.shape)
         SQ = []
         for j,d in enumerate(distance):
             if d[0] < interval1 and d[1] < interval2:
