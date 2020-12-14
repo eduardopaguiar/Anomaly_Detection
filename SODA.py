@@ -50,26 +50,23 @@ def pi_calculator(Uniquesample, mode):
         #Xnorm = cp.matrix(cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1))).T
         Xnorm = cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1)).reshape(-1,1).T
         aux2 = Xnorm.T
-
         for i in range(W-1):
             aux2 = cp.concatenate((Xnorm.T,aux2),axis=1)
-        
+            
         #aux2 = cp.insert(aux2,0,Xnorm.T,axis=1)
         Uniquesample1 = Uniquesample / aux2
-        AA2 = cp.mean(Uniquesample1,0)
+        AA2 = cp.mean(Uniquesample1,0).reshape(1,-1)
         X2 = 1
         DT2 = X2 - cp.sum(cp.power(AA2,2))
         aux = []
-        aux2 = cp.empty((Uniquesample1.shape))
+        aux2 = cp.empty((UN,1,W))
         for i in range(UN): aux.append(AA2)
-        print(aux)
-        for i in range(UN): aux2 [i] = Uniquesample[i]-aux[i]
+        
+        for i in range(UN): aux2 [i] = Uniquesample1[i]-aux[i]
+        
         a = cp.power(aux2,2)
-        print(a.shape)
         b = cp.sum(a,axis=1)
-        print(b.shape)
         c = cp.sum(b,axis=1)
-        print(c.shape)
         uspi = c+DT2
         
     return uspi
@@ -83,12 +80,17 @@ def Globaldensity_Calculator(data, distancetype):
     #    K =  cp.asarray(K)
 
     Frequency, _ = np.histogram(K,bins=len(J))
+    Frequency = cp.asarray(Frequency)
+    print("Frequency", type(Frequency))
     uspi1 = pi_calculator(Uniquesample, distancetype)
     sum_uspi1 = sum(uspi1)
     Density_1 = uspi1 / sum_uspi1
+    print("Density_1", type(Density_1))
     uspi2 = pi_calculator(Uniquesample, 'cosine')
     sum_uspi2 = sum(uspi2)
     Density_2 = uspi1 / sum_uspi2
+    print("Density_2", type(Density_2))
+
     GD = (Density_2+Density_1) * Frequency
     index = GD.argsort()[::-1]
     GD = GD[index]
@@ -108,10 +110,8 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     BOXMT = [MMtypicality[k] for k in range(W)]
     
     for i in range(W,L):
-        if distancetype == 'minkowski':
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
-        else:
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
+        
+        a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
         
         b = cp.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
         distance = cp.array([a[0],b[0]]).T
