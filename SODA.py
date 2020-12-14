@@ -51,15 +51,9 @@ def pi_calculator(Uniquesample, mode):
         Xnorm = cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1)).reshape(-1,1).T
         aux2 = Xnorm.T
 
-        print(aux2.shape)
-        print(Xnorm.shape)
-
         for i in range(W-1):
             aux2 = cp.concatenate((Xnorm.T,aux2),axis=1)
         
-        print(aux2.shape)
-        print('_'*50)
-
         #aux2 = cp.insert(aux2,0,Xnorm.T,axis=1)
         Uniquesample1 = Uniquesample / aux2
         AA2 = cp.mean(Uniquesample1,0)
@@ -68,6 +62,7 @@ def pi_calculator(Uniquesample, mode):
         aux = []
         aux2 = cp.empty((Uniquesample1.shape))
         for i in range(UN): aux.append(AA2)
+        print(aux)
         for i in range(UN): aux2 [i] = Uniquesample[i]-aux[i]
         a = cp.power(aux2,2)
         print(a.shape)
