@@ -13,6 +13,31 @@ def argwhere(data):
     
     return aux2
 
+def cp_cdist(A, B, metric='euclidean'):
+    LA, WA = A.shape
+    LB, WB = B.shape
+    ret_array = cp.zeros((LA,LB))
+    
+    if metric == 'euclidean':
+        aux = cp.empty((LB,WB))
+        
+        for i in range(LA):
+            for j in range(LB):
+                aux[j] = A[i]-B[j]
+            ret_array[i] = cp.sqrt(cp.sum(cp.power(aux,2),axis=1))
+    
+    if metric == 'cosine':
+        num = cp.empty((LB))
+        den = cp.empty((LB))
+        
+        for i in range(LA):
+            for j in range(LB):
+                num [j]= cp.sum(A[i]*B[j])
+                den [j]= cp.sqrt(cp.sum(A[i]*A[i])*cp.sum(B[j]*B[j]))
+            ret_array[i] = 1 - num/den
+    
+    return ret_array
+
 def grid_set(data, N):
 
     _ , W = data.shape
@@ -81,15 +106,12 @@ def Globaldensity_Calculator(data, distancetype):
 
     Frequency, _ = np.histogram(K,bins=len(J))
     Frequency = cp.asarray(Frequency)
-    print("Frequency", type(Frequency))
     uspi1 = pi_calculator(Uniquesample, distancetype)
     sum_uspi1 = sum(uspi1)
     Density_1 = uspi1 / sum_uspi1
-    print("Density_1", type(Density_1))
     uspi2 = pi_calculator(Uniquesample, 'cosine')
     sum_uspi2 = sum(uspi2)
     Density_2 = uspi1 / sum_uspi2
-    print("Density_2", type(Density_2))
 
     GD = (Density_2+Density_1) * Frequency
     index = GD.argsort()[::-1]
@@ -99,11 +121,11 @@ def Globaldensity_Calculator(data, distancetype):
     return GD, Uniquesample, Frequency
 
 def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
-    L, W = Uniquesample.shape
-    if distancetype == 'euclidean':
-        W = 1
+    L, WU = Uniquesample.shape
+    W = 1
     BOX = [Uniquesample[k] for k in range(W)]
-    BOX_miu = [Uniquesample[k] for k in range(W)]
+    BOX_miu = cp.empty((L,WU))
+    for k in range(W): BOX_miu [k] = Uniquesample[k]
     BOX_S = [1]*W
     BOX_X = [sum(Uniquesample[k]**2) for k in range(W)]
     NB = W
@@ -111,9 +133,9 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     
     for i in range(W,L):
         
-        a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
+        a = cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu)
         
-        b = cp.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
+        b = cp.sqrt(cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
         distance = cp.array([a[0],b[0]]).T
         SQ = []
         for j,d in enumerate(distance):
