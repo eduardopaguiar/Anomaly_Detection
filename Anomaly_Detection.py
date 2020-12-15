@@ -37,9 +37,9 @@ def main():
     N_PCs = 8
 
     # Range of SODA granularities
-    min_granularity = 1
+    min_granularity = 14
 
-    max_granularity = 1
+    max_granularity = 14
 
     # Number of iteration
     iterations = 1
@@ -56,15 +56,13 @@ def main():
     # Loading data into the code
 
     ### Background    
-
-    b_name='Reduced_Input_Background_1.csv'
+    b_name='Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
-
-    s_name='Reduced_Input_Signal_1.csv'
+    s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -111,20 +109,21 @@ def main():
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
 
-        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i,1)
-        """
+        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, min_granularity,len(background_test),n_i,1)
+        '''
         print('Creating pool with %d processes\n' % PROCESSES)
 
         with multiprocessing.Pool(PROCESSES) as pool:
 
             #
             # Tests
+            print("=== Criar Tasks ===")
 
             TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)]
 
-            pool.map(calculatestar, TASKS)
+            pool.map(calculatestar, TASKS)'''
 
-            """
+            
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
