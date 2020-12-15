@@ -480,7 +480,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
                 detection_info.loc[0,'False_Positive'] += 1
 
     
-    detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
+    detection_info.loc[0,'N_Groups'] = int(cp.amax(soda_labels)+1)
 
     performance_thread.stop()
     performance_out = performance_thread.join()

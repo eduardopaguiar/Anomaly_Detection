@@ -285,11 +285,11 @@ def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
             SQ.append(i)
             
     if COUNT == 0:
-        Box_new = cp.concatenate((Box, data))
+        Box_new = cp.concatenate((Box, data.reshape(1,-1)))
         NB_new = NB+1
         BOX_S_new = cp.concatenate((BOX_S, cp.array([1])))
         #BOX_S_new = cp.array(BOX_S)
-        BOX_miu_new = cp.concatenate((BOX_miu, cp.array(data)))
+        BOX_miu_new = cp.concatenate((BOX_miu, cp.array(data.reshape(1,-1))))
     if COUNT>=1:
         DIS = cp.zeros((COUNT,1))
         for j in range(COUNT):
@@ -356,8 +356,8 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
         distance1 = cp.zeros((NB,1))
         distance2 = cp.zeros((NB,1))
         for i in range(NB):
-            distance1[i] = cp_pdist([list(Reference), list(BOX_miu[i])], 'euclidean')
-            distance2[i] = cp.sqrt(cp_pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
+            distance1[i] = cp_pdist(cp.vstack((Reference, BOX_miu[i])), 'euclidean')
+            distance2[i] = cp.sqrt(cp_pdist(cp.vstack((Reference, BOX_miu[i])), 'cosine'))
         
         Chessblocak_typicality = []
         for i in range(NB):
@@ -366,7 +366,7 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
         if max(Chessblocak_typicality) == BOXMT[ii]:
             Centers.append(Reference)
             ModeNumber += 1
-    
+    Centers = cp.asarray(Centers)
     return Centers,ModeNumber
 
 def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
