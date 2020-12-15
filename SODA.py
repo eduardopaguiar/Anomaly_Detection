@@ -43,7 +43,7 @@ def grid_set(data, N):
     _ , W = data.shape
     AvD1 = data.mean(0)
     X1 = cp.mean(cp.sum(cp.power(data,2),axis=1))
-    grid_trad = cp.sqrt(2*(X1 - AvD1*AvD1.T))/N
+    grid_trad = cp.sqrt(2*(X1 - cp.sum(AvD1*AvD1.T)))/N
     Xnorm = cp.sqrt(cp.sum(cp.power(data,2),axis=1)).reshape(-1,1)
     aux = Xnorm
     for i in range(W-1):
@@ -53,7 +53,7 @@ def grid_set(data, N):
     seq = argwhere(cp.isnan(data))
     if tuple(seq[::]): data[tuple(seq[::])] = 1
     AvD2 = data.mean(0)
-    grid_angl = cp.sqrt(1-AvD2*AvD2.T)/N
+    grid_angl = cp.sqrt(1-cp.sum(AvD2*AvD2.T))/N
     return X1, AvD1, AvD2, grid_trad, grid_angl
 
 def pi_calculator(Uniquesample, mode):
@@ -119,41 +119,45 @@ def Globaldensity_Calculator(data, distancetype):
 def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
     L, WU = Uniquesample.shape
     W = 1
-    BOX = [Uniquesample[k] for k in range(W)]
-    BOX_miu = cp.empty((L,WU))
-    for k in range(W): BOX_miu [k] = Uniquesample[k]
+    BOX = cp.asarray(Uniquesample[0]).reshape(1,-1)
+    BOX_miu = cp.asarray(Uniquesample[0]).reshape(1,-1)
     BOX_S = [1]*W
-    BOX_X = [sum(Uniquesample[k]**2) for k in range(W)]
+    BOX_X = cp.sum(cp.power(cp.asarray(Uniquesample[0]),2)).reshape(1,-1)
     NB = W
-    BOXMT = [MMtypicality[k] for k in range(W)]
+    BOXMT = cp.asarray(MMtypicality[0]).reshape(1,-1)
     
     for i in range(W,L):
-        
+        print(BOX_miu.shape)
         a = cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu)
-        print("a.shape",a.shape)
+        #print("a.shape",a.shape)
         b = cp.sqrt(cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        print("b.shape",b.shape)
+        #print("b.shape",b.shape)
         distance = cp.stack((a[0],b[0])).T
+        #print("distance.shaep", distance.shape)
         SQ = []
         for j,d in enumerate(distance):
+            #print(d[0])
+            #print(d[1])
+            #print(interval1)
+            #print(interval2)
             if d[0] < interval1 and d[1] < interval2:
                 SQ.append(j)
         #SQ = cp.argwhere(distance[::,0]<interval1 and (distance[::,1]<interval2))
         COUNT = len(SQ)
         if COUNT == 0:
-            BOX.append(Uniquesample[i])
+            BOX = cp.vstack((BOX, cp.asarray(Uniquesample[i]).reshape(1,-1)))
             NB = NB + 1
             BOX_S.append(1)
-            BOX_miu.append(Uniquesample[i])
-            BOX_X.append(sum(Uniquesample[i]**2))
-            BOXMT.append(MMtypicality[i])
+            BOX_miu = cp.vstack((BOX_miu, cp.asarray(Uniquesample[i]).reshape(1,-1)))
+            BOX_X = cp.vstack((BOX_X, cp.asarray(cp.sum(cp.power(cp.asarray(Uniquesample[0]).reshape(1,-1),2))).reshape(1,-1)))
+            BOXMT = cp.vstack((BOXMT, cp.asarray(MMtypicality[i]).reshape(1,-1)))
         if COUNT >= 1:
             DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2 # pylint: disable=E1136  # pylint/issues/3139
             b = cp.argmin(DIS)
-            BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
-            BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample[i]/BOX_S[SQ[b]]
-            BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
-            BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i]
+            BOX_S[SQ[int(b)]] = BOX_S[SQ[int(b)]] + 1
+            BOX_miu[SQ[int(b)]] = (BOX_S[SQ[int(b)]]-1)/BOX_S[SQ[int(b)]]*BOX_miu[SQ[int(b)]] + Uniquesample[i]/BOX_S[SQ[int(b)]]
+            BOX_X[SQ[int(b)]] = (BOX_S[SQ[int(b)]]-1)/BOX_S[SQ[int(b)]]*BOX_X[SQ[int(b)]] + sum(Uniquesample[i]**2)/BOX_S[SQ[int(b)]]
+            BOXMT[SQ[int(b)]] = BOXMT[SQ[int(b)]] + MMtypicality[i]
     return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
 
 def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
