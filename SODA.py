@@ -38,6 +38,70 @@ def cp_cdist(A, B, metric='euclidean'):
     
     return ret_array
 
+def cp_pdist(A, metric='euclidean'):
+    L, WA = A.shape
+    
+    if metric == 'euclidean':
+        for i in range(L):
+            aux = cp.empty(((L-(i+1)),WA))
+            for j in range(i+1, L):
+                aux[j-(i+1)]= (A[i] - A[j])
+            if i == 0:
+                ret_array = cp.sqrt(cp.sum(cp.power(aux,2),axis=1))
+            elif i == L-1:
+                break
+            else:
+                ret_array = cp.concatenate((ret_array, cp.sqrt(cp.sum(cp.power(aux,2),axis=1))))
+                
+    if metric == 'cosine':
+        for i in range(L):
+            num = cp.empty(((L-(i+1))))
+            den = cp.empty(((L-(i+1))))
+            for j in range(i+1, L):
+                num[j-(i+1)] = cp.sum(A[i]*A[j])
+                den[j-(i+1)] = cp.sqrt(cp.sum(A[i]*A[i])*cp.sum(A[j]*A[j]))
+            if i == 0:
+                ret_array = 1 - num/den
+            elif i == L-1:
+                break
+            else:
+                ret_array = np.concatenate((ret_array, 1 - num/den))
+       
+    return ret_array
+
+def cp_pdist_squareform(A, metric='euclidean'):
+    L, WA = A.shape
+    
+    if metric == 'euclidean':
+        ret_array = cp.zeros((L,L))
+    
+        for i in range(L):
+            aux = cp.empty(((L-(i+1)),WA))
+            for j in range(i+1, L):
+                aux[j-(i+1)] = A[i] - A[j]
+            if i == L-1:
+                break
+            else:
+                ret_array[i, (i+1):L] = np.sqrt(np.sum(np.power(aux,2),axis=1))
+                ret_array[(i+1):L, i] = np.sqrt(np.sum(np.power(aux,2),axis=1))
+        
+    if metric == 'cosine':
+        ret_array = cp.zeros((L,L))
+    
+        for i in range(L):
+            num = cp.empty(((L-(i+1))))
+            den = cp.empty(((L-(i+1))))
+            for j in range(i+1, L):
+                num[j-(i+1)] = cp.sum(A[i]*A[j])
+                den[j-(i+1)] = cp.sqrt(cp.sum(A[i]*A[i])*cp.sum(A[j]*A[j]))
+            if i == L-1:
+                break
+            else:
+                ret_array[i, (i+1):L] = 1 - num/den
+                ret_array[(i+1):L, i] = 1 - num/den
+            
+    return ret_array
+  
 def grid_set(data, N):
 
     _ , W = data.shape
@@ -127,19 +191,11 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     BOXMT = cp.asarray(MMtypicality[0]).reshape(1,-1)
     
     for i in range(W,L):
-        print(BOX_miu.shape)
         a = cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu)
-        #print("a.shape",a.shape)
         b = cp.sqrt(cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        #print("b.shape",b.shape)
         distance = cp.stack((a[0],b[0])).T
-        #print("distance.shaep", distance.shape)
         SQ = []
         for j,d in enumerate(distance):
-            #print(d[0])
-            #print(d[1])
-            #print(interval1)
-            #print(interval2)
             if d[0] < interval1 and d[1] < interval2:
                 SQ.append(j)
         #SQ = cp.argwhere(distance[::,0]<interval1 and (distance[::,1]<interval2))
@@ -165,12 +221,9 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
     n = 2
     ModeNumber = 0
     
-    if distancetype == 'minkowski':
-        distance1 = squareform(pdist(BOX_miu,metric=distancetype, p=1.5))
-    else:
-        distance1 = squareform(pdist(BOX_miu,metric=distancetype))        
+    distance1 = cp_pdist_squareform(BOX_miu,metric=distancetype)
     
-    distance2 = cp.sqrt(squareform(pdist(BOX_miu,metric='cosine')))
+    distance2 = cp.sqrt(cp_pdist_squareform(BOX_miu,metric='cosine'))
     for i in range(NB):
         seq = []
         for j,(d1,d2) in enumerate(zip(distance1[i],distance2[i])):
@@ -180,7 +233,10 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
         if max(Chessblocak_typicality) == BOXMT[i]:
             Centers.append(BOX_miu[i])
             ModeNumber = ModeNumber + 1
-    return Centers, ModeNumber
+        Centers_array = cp.empty((len(Centers),len(Centers[0])))
+        for i in range(len(Centers)): Centers_array[i] = Centers[i]
+
+    return Centers_array, ModeNumber
 
 def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     L, W = Uniquesample.shape
@@ -188,12 +244,9 @@ def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,g
     Members = cp.zeros((L,ModelNumber*W))
     Count = []
 
-    if distancetype == 'minkowski':
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype, p=1.5)/grid_trad
-    else:
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype)/grid_trad
+    distance1 = cp_cdist(Uniquesample,Center_samples, metric=distancetype)/grid_trad
 
-    distance2 = cp.sqrt(cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
+    distance2 = cp.sqrt(cp_cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
     distance3 = distance1 + distance2
     B = distance3.argmin(1)
     for i in range(ModelNumber):
@@ -202,8 +255,13 @@ def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,g
             if b == i:
                 seq.append(j)
         Count.append(len(seq))
-        Membership[:Count[i]:,i] = seq
-        Members[:Count[i]:,W*i:W*(i+1)] = [Uniquesample[j] for j in seq]
+        for j in range(len(seq)): Membership[(j),i] = seq[j]
+        aux = cp.empty((len(seq),W))
+        k = 0
+        for j in seq:
+            aux[k] = Uniquesample[j]
+            k += 1
+        for j in range(len(seq)): Members[j,W*i:W*(i+1)] = aux[j]
     MemberNumber = Count
     return Members,MemberNumber,Membership,B 
 
@@ -217,15 +275,17 @@ def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     distance = cp.zeros((NB,2))
     COUNT = 0
     SQ = []
+    aux = cp.empty((2,len(BOX_miu[0])))
     for i in range(NB):
-        distance[i,0] = pdist([list(BOX_miu[i]), data.tolist()[0]],'euclidean')
-        distance[i,1] = cp.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
+        aux = cp.stack([BOX_miu[i], data])
+        distance[i,0] = float(cp_pdist(aux,'euclidean'))
+        distance[i,1] = float(np.sqrt(cp_pdist(aux,'cosine')))
         if distance[i,0] < intervel1 and distance[i,1] < intervel2:
             COUNT += 1
             SQ.append(i)
             
     if COUNT == 0:
-        Box_new = cp.concatenate((Box, cp.array(data)))
+        Box_new = cp.concatenate((Box, data))
         NB_new = NB+1
         BOX_S_new = cp.concatenate((BOX_S, cp.array([1])))
         #BOX_S_new = cp.array(BOX_S)
@@ -257,8 +317,8 @@ def Chessboard_online_merge(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
         NB1 = NB
         for ii in range(NB):
             seq1 = [i for i in range(NB) if i != ii]
-            distance1 = cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'euclidean')
-            distance2 = cp.sqrt(cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
+            distance1 = cp_cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'euclidean')
+            distance2 = cp.sqrt(cp_cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
             for jj in range(NB-1):
                 if distance1[0,jj] < threshold1 and distance2[0,jj] < threshold2:
                     CC = 1
@@ -296,8 +356,8 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
         distance1 = cp.zeros((NB,1))
         distance2 = cp.zeros((NB,1))
         for i in range(NB):
-            distance1[i] = pdist([list(Reference), list(BOX_miu[i])], 'euclidean')
-            distance2[i] = cp.sqrt(pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
+            distance1[i] = cp_pdist([list(Reference), list(BOX_miu[i])], 'euclidean')
+            distance2[i] = cp.sqrt(cp_pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
         
         Chessblocak_typicality = []
         for i in range(NB):
