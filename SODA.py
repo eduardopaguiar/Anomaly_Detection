@@ -65,7 +65,7 @@ def cp_pdist(A, metric='euclidean'):
             elif i == L-1:
                 break
             else:
-                ret_array = np.concatenate((ret_array, 1 - num/den))
+                ret_array = cp.concatenate((ret_array, 1 - num/den))
        
     return ret_array
 
@@ -82,8 +82,8 @@ def cp_pdist_squareform(A, metric='euclidean'):
             if i == L-1:
                 break
             else:
-                ret_array[i, (i+1):L] = np.sqrt(np.sum(np.power(aux,2),axis=1))
-                ret_array[(i+1):L, i] = np.sqrt(np.sum(np.power(aux,2),axis=1))
+                ret_array[i, (i+1):L] = cp.sqrt(cp.sum(cp.power(aux,2),axis=1))
+                ret_array[(i+1):L, i] = cp.sqrt(cp.sum(cp.power(aux,2),axis=1))
         
     if metric == 'cosine':
         ret_array = cp.zeros((L,L))
@@ -185,7 +185,7 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     W = 1
     BOX = cp.asarray(Uniquesample[0]).reshape(1,-1)
     BOX_miu = cp.asarray(Uniquesample[0]).reshape(1,-1)
-    BOX_S = [1]*W
+    BOX_S = cp.asarray([1])
     BOX_X = cp.sum(cp.power(cp.asarray(Uniquesample[0]),2)).reshape(1,-1)
     NB = W
     BOXMT = cp.asarray(MMtypicality[0]).reshape(1,-1)
@@ -203,7 +203,7 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
         if COUNT == 0:
             BOX = cp.vstack((BOX, cp.asarray(Uniquesample[i]).reshape(1,-1)))
             NB = NB + 1
-            BOX_S.append(1)
+            BOX_S = cp.vstack((BOX_S, cp.asarray([1])))
             BOX_miu = cp.vstack((BOX_miu, cp.asarray(Uniquesample[i]).reshape(1,-1)))
             BOX_X = cp.vstack((BOX_X, cp.asarray(cp.sum(cp.power(cp.asarray(Uniquesample[0]).reshape(1,-1),2))).reshape(1,-1)))
             BOXMT = cp.vstack((BOXMT, cp.asarray(MMtypicality[i]).reshape(1,-1)))
@@ -279,7 +279,7 @@ def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     for i in range(NB):
         aux = cp.stack([BOX_miu[i], data])
         distance[i,0] = float(cp_pdist(aux,'euclidean'))
-        distance[i,1] = float(np.sqrt(cp_pdist(aux,'cosine')))
+        distance[i,1] = float(cp.sqrt(cp_pdist(aux,'cosine')))
         if distance[i,0] < intervel1 and distance[i,1] < intervel2:
             COUNT += 1
             SQ.append(i)
@@ -287,7 +287,7 @@ def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     if COUNT == 0:
         Box_new = cp.concatenate((Box, data.reshape(1,-1)))
         NB_new = NB+1
-        BOX_S_new = cp.concatenate((BOX_S, cp.array([1])))
+        BOX_S_new = cp.concatenate((BOX_S, cp.asarray([1]).reshape(1,-1)))
         #BOX_S_new = cp.array(BOX_S)
         BOX_miu_new = cp.concatenate((BOX_miu, cp.array(data.reshape(1,-1))))
     if COUNT>=1:
@@ -343,7 +343,7 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     uspi2 = pi_calculator(Hypermean,'cosine')
     sum_uspi2 = cp.sum(uspi2)
     Density_2 = uspi1/sum_uspi2
-    Hyper_GD = (Density_2 + Density_1)*HyperSupport
+    Hyper_GD = (Density_2 + Density_1)*HyperSupport.T
     return Hyper_GD
 
 def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
@@ -359,11 +359,16 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
             distance1[i] = cp_pdist(cp.vstack((Reference, BOX_miu[i])), 'euclidean')
             distance2[i] = cp.sqrt(cp_pdist(cp.vstack((Reference, BOX_miu[i])), 'cosine'))
         
-        Chessblocak_typicality = []
+        first = True
         for i in range(NB):
             if distance1[i]<n*interval1 and distance2[i]<n*interval2:
-                Chessblocak_typicality.append(BOXMT[i])
-        if max(Chessblocak_typicality) == BOXMT[ii]:
+                if first:
+                    Chessblocak_typicality = BOXMT[0][i].reshape(1,-1)
+                    first = False
+                else:
+                    Chessblocak_typicality = cp.vstack((Chessblocak_typicality, BOXMT[0][i].reshape(1,-1)))
+                    
+        if max(Chessblocak_typicality) == BOXMT[0][ii]:
             Centers.append(Reference)
             ModeNumber += 1
     Centers = cp.asarray(Centers)
