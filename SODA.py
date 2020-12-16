@@ -233,8 +233,8 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
         if max(Chessblocak_typicality) == BOXMT[i]:
             Centers.append(BOX_miu[i])
             ModeNumber = ModeNumber + 1
-        Centers_array = cp.empty((len(Centers),len(Centers[0])))
-        for i in range(len(Centers)): Centers_array[i] = Centers[i]
+    Centers_array = cp.empty((len(Centers),len(Centers[0])))
+    for i in range(len(Centers)): Centers_array[i] = Centers[i]
 
     return Centers_array, ModeNumber
 
@@ -323,13 +323,26 @@ def Chessboard_online_merge(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
                 if distance1[0,jj] < threshold1 and distance2[0,jj] < threshold2:
                     CC = 1
                     NB -= 1
-                    Box = np.delete(Box, (ii), axis=0)
+                    #Box = np.delete(Box, (ii), axis=0)
                     BOX_miu[seq1[jj]] = BOX_miu[seq1[jj]]*BOX_S[seq1[jj]]/(BOX_S[seq1[jj]]+BOX_S[ii])+BOX_miu[ii]*BOX_S[ii]/(BOX_S[seq1[jj]]+BOX_S[ii])
                     
                     BOX_S[seq1[jj]] = BOX_S[seq1[jj]] + BOX_S[ii]
-                    BOX_miu = np.delete(BOX_miu, (ii), axis=0)
-                    BOX_S = np.delete(BOX_S, (ii), axis=0)
-                    
+                    #BOX_miu = np.delete(BOX_miu, (ii), axis=0)
+                    #BOX_S = np.delete(BOX_S, (ii), axis=0)
+    
+                    L, W1 = Box.shape
+                    W2 = BOX_miu.shape[1]
+                    W3 = BOX_S.shape[1]
+                    new_Box = cp.empty((L-1,W1))
+                    new_BOX_miu = cp.empty((L-1, W2))
+                    new_BOX_S = cp.empty((L-1,W3))
+                    for ll, kk in enumerate([xx for xx in range(L) if xx != ii]):
+                        new_Box[ll] = Box[kk]
+                        new_BOX_miu[ll] = BOX_miu[kk]
+                        new_BOX_S[ll] = BOX_S[kk]
+                    Box = new_Box
+                    BOX_miu = new_BOX_miu
+                    BOX_S = new_BOX_S
                     break
             if CC == 1:
                 break
