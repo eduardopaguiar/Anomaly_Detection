@@ -39,12 +39,6 @@ def main():
     # Range of SODA granularities
     min_granularity = 1
 
-<<<<<<< HEAD
-    max_granularity = 1
-
-    # Number of iteration
-    iterations = 1
-=======
     max_granularity = 30
 
     # Number of iteration
@@ -52,7 +46,6 @@ def main():
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
->>>>>>> multiprocessing_cupy
 
     # Number of Data-set divisions
     windows = 100
