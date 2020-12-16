@@ -63,23 +63,13 @@ def main():
     # Loading data into the code
 
     ### Background    
-<<<<<<< HEAD
-
-    b_name='Reduced_Input_Background_1.csv'
-=======
     b_name='Input_Background_1.csv'
->>>>>>> multiprocessing_cupy
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
-<<<<<<< HEAD
-
-    s_name='Reduced_Input_Signal_1.csv'
-=======
     s_name='Input_Signal_1.csv'
->>>>>>> multiprocessing_cupy
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -125,10 +115,6 @@ def main():
         # Plots PCA results
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
-<<<<<<< HEAD
-
-        print('Creating pool with %d processes\n' %(max_granularity - min_granularity + 1))
-=======
         for gra in range(min_granularity, max_granularity+1):
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)
         '''
@@ -139,18 +125,13 @@ def main():
             #
             # Tests
             print("=== Criar Tasks ===")
->>>>>>> multiprocessing_cupy
 
         for gra in range(min_granularity, max_granularity + 1):
             p = multiprocessing.Process(target=dm.SODA_Granularity_Iteration, args=(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i))
 
-<<<<<<< HEAD
-            p.start()
-=======
             pool.map(calculatestar, TASKS)'''
 
             
->>>>>>> multiprocessing_cupy
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
