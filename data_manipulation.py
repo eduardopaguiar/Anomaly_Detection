@@ -491,13 +491,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Max RAM_Percentage'] = performance_out['max_ram_p']
     performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
     performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
-<<<<<<< HEAD
-=======
-    
-    if laplace == 0:
-        detection_info.to_csv('results/detection_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-        performance_info.to_csv('results/performance_info_Laplace' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
->>>>>>> multiprocessing_cupy
     
     detection_info.to_csv('results/detection_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
     performance_info.to_csv('results/performance_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)

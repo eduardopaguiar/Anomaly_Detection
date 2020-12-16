@@ -129,27 +129,11 @@ def pi_calculator(Uniquesample, mode):
         aux = []
         aux2 = cp.empty((Uniquesample.shape))
         for i in range(UN): aux.append(AA1)
-<<<<<<< HEAD
-        aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
-        uspi = np.sum(np.power(aux2,2),axis=1)+DT1
-        
-    if mode == 'minkowski':
-        AA1 = Uniquesample.mean(0)
-        X1 = sum(sum(np.power(Uniquesample,2)))/UN
-        DT1 = X1 - sum(np.power(AA1,2))
-        aux = np.matrix(AA1)
-        for i in range(UN-1): aux = np.insert(aux,0,AA1,axis=0)
-        aux = np.array(aux)
-        
-        uspi = np.power(cdist(Uniquesample, aux, mode, p=1.5),2)+DT1
-        uspi = uspi[:,0]
-=======
         for i in range(UN): aux2 [i] = Uniquesample[i]-aux[i]
         a = cp.power(aux2,2)
         b = cp.sum(a,axis=1)
         uspi = b+DT1
 
->>>>>>> multiprocessing_cupy
     
     if mode == 'cosine':
         #Xnorm = cp.matrix(cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1))).T
@@ -166,22 +150,12 @@ def pi_calculator(Uniquesample, mode):
         aux = []
         aux2 = cp.empty((UN,1,W))
         for i in range(UN): aux.append(AA2)
-<<<<<<< HEAD
-        aux2 = [Uniquesample1[i]-aux[i] for i in range(UN)]
-
-
-        a = np.power(aux2,2)
-        
-        b = np.sum(a,axis=1)
-        c = np.sum(b,axis=1)
-=======
         
         for i in range(UN): aux2 [i] = Uniquesample1[i]-aux[i]
         
         a = cp.power(aux2,2)
         b = cp.sum(a,axis=1)
         c = cp.sum(b,axis=1)
->>>>>>> multiprocessing_cupy
         uspi = c+DT2
         
     return uspi
@@ -217,23 +191,9 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     BOXMT = cp.asarray(MMtypicality[0]).reshape(1,-1)
     
     for i in range(W,L):
-<<<<<<< HEAD
-        if distancetype == 'minkowski':
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
-        else:
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
-        print("A.shape",Uniquesample[i].reshape(1,-1).shape)
-        print("B.shape (",len(BOX_miu),')')
-        print("a.shape",a.shape)
-        b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        print("b.shape",b.shape)
-        distance = np.array([a[0],b[0]]).T
-        print("distance.shape",distance.shape)
-=======
         a = cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu)
         b = cp.sqrt(cp_cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
         distance = cp.stack((a[0],b[0])).T
->>>>>>> multiprocessing_cupy
         SQ = []
         for j,d in enumerate(distance):
             if d[0] < interval1 and d[1] < interval2:
@@ -394,15 +354,9 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     sum_uspi1 = cp.sum(uspi1)
     Density_1 = uspi1/sum_uspi1
     uspi2 = pi_calculator(Hypermean,'cosine')
-<<<<<<< HEAD
-    sum_uspi2 = np.sum(uspi2)
-    Density_2 = uspi1/sum_uspi2
-    Hyper_GD = (Density_2 + Density_1)*HyperSupport
-=======
     sum_uspi2 = cp.sum(uspi2)
     Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport.T
->>>>>>> multiprocessing_cupy
     return Hyper_GD
 
 def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
