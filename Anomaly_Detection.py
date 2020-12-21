@@ -13,21 +13,13 @@ from sklearn.model_selection import train_test_split
 import os
 import SODA
 import data_manipulation as dm
-from progress.bar import Bar
-import multiprocessing
 from sklearn.utils.validation import check_array
+import sys
 
 #-------------------------------------------------------------------------------------#
 #-------------------------------------Main Code---------------------------------------#
 
-def calculate(func, args):
-    result = func(*args)
-    return result
-
-def calculatestar(args):
-    return calculate(*args)
-
-def main():
+def main(min_g, max_g):
     #-------------------------------------------------------------------------------------#
     #---------------------------------Initiation Part-------------------------------------#
 
@@ -36,16 +28,8 @@ def main():
     # PCA number of components
     N_PCs = 8
 
-    # Range of SODA granularities
-    min_granularity = 1
-
-    max_granularity = 2
-
     # Number of iteration
     iterations = 2
-
-    # Number of process to create in the multiprocessing step
-    PROCESSES = 1
 
     # Number of Data-set divisions
     windows = 100
@@ -110,18 +94,11 @@ def main():
         # Plots PCA results
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
+        for g in range(min_g, max_g):
+            SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, g,len(background_test),n_i)
 
-        print('Creating pool with %d processes\n' % PROCESSES)
-
-        with multiprocessing.Pool(PROCESSES) as pool:
-
-            #
-            # Tests
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,0)) for gra in range(min_granularity, max_granularity + 1)]
-
-            pool.map(calculatestar, TASKS)
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
-    main()       
+    min_g = int(sys.arv[1])
+    max_g = int(sys.arv[2])
+    main(min_g, max_g)       
