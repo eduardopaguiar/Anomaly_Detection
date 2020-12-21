@@ -28,10 +28,8 @@ def pi_calculator(Uniquesample, mode):
         DT1 = X1 - sum(np.power(AA1,2))
         aux = []
         for i in range(UN): aux.append(AA1)
-        
-        #aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
-        #uspi = np.sum(np.power(aux2,2),axis=1)+DT1
-        
+        aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
+        uspi = np.sum(np.power(aux2,2),axis=1)+DT1
         uspi = np.power(cdist(Uniquesample, aux, mode),2)+DT1
         uspi = uspi[:,0]
         
