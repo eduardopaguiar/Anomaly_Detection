@@ -37,9 +37,9 @@ def main():
     N_PCs = 8
 
     # Range of SODA granularities
-    min_granularity = 14
+    min_granularity = 1
 
-    max_granularity = 14
+    max_granularity = 1
 
     # Number of iteration
     iterations = 1
@@ -65,7 +65,7 @@ def main():
     s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    #signal = signal[1:,:]
+    signal = signal[1:,:]
 
     for n_i in range(iterations):
 

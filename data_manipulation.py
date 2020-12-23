@@ -394,8 +394,8 @@ def statistics_attributes(data):
     return output_data
 
 def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration):
-    ## Formmating  Data
-    offline_data = cp.asarray(offline_data)
+    # Formmating  Data
+    offline_data = np.matrix(offline_data)
     L1 = len(offline_data)
 
     streaming_data = cp.asarray(streaming_data)

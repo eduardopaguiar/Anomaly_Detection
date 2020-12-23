@@ -129,11 +129,20 @@ def pi_calculator(Uniquesample, mode):
         aux = []
         aux2 = cp.empty((Uniquesample.shape))
         for i in range(UN): aux.append(AA1)
-        for i in range(UN): aux2 [i] = Uniquesample[i]-aux[i]
-        a = cp.power(aux2,2)
-        b = cp.sum(a,axis=1)
-        uspi = b+DT1
-
+        aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
+        uspi = np.sum(np.power(aux2,2),axis=1)+DT1
+      
+        
+    if mode == 'minkowski':
+        AA1 = Uniquesample.mean(0)
+        X1 = sum(sum(np.power(Uniquesample,2)))/UN
+        DT1 = X1 - sum(np.power(AA1,2))
+        aux = np.matrix(AA1)
+        for i in range(UN-1): aux = np.insert(aux,0,AA1,axis=0)
+        aux = np.array(aux)
+        
+        uspi = np.power(cdist(Uniquesample, aux, mode, p=1.5),2)+DT1
+        uspi = uspi[:,0]
     
     if mode == 'cosine':
         #Xnorm = cp.matrix(cp.sqrt(cp.sum(cp.power(Uniquesample,2),axis=1))).T
