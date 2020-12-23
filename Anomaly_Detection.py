@@ -52,17 +52,17 @@ def main(granularity):
 
     ### Background    
 
-    b_name='Reduced_Input_Background_1.csv'
+    b_name='Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
 
-    s_name='Reduced_Input_Signal_1.csv'
+    s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    #signal = signal[1:,:]
+    signal = signal[1:,:]
 
     for n_i in range(iterations):
 
