@@ -17,7 +17,6 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn import preprocessing
 import sklearn
 from sklearn.utils.validation import check_array
-import cupy as cp
 
 
 class performance(threading.Thread):
@@ -178,7 +177,7 @@ def Normalisation(data):
 
     return norm_data
 
-def PCA_Analysis(mantained_variation, attributes_influence):
+def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     """Create and save the PCA model
     -- Input
     - mantained_variation = variation mantained for each PC
@@ -398,7 +397,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     offline_data = np.matrix(offline_data)
     L1 = len(offline_data)
 
-    streaming_data = cp.asarray(streaming_data)
+    streaming_data = np.matrix(streaming_data)
     
     data = np.concatenate((offline_data, streaming_data), axis=0)
 
@@ -420,6 +419,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Granularity'] = gra
 
     Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
+
     out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Offline')
 
     # Concatanating IDs and creating labels
@@ -479,7 +479,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
                 detection_info.loc[0,'False_Positive'] += 1
 
     
-    detection_info.loc[0,'N_Groups'] = int(cp.amax(soda_labels)+1)
+    detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
 
     performance_thread.stop()
     performance_out = performance_thread.join()
@@ -491,6 +491,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Max RAM_Percentage'] = performance_out['max_ram_p']
     performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
     performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
-    
-    detection_info.to_csv('results/detection_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-    performance_info.to_csv('results/performance_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+
+    detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
