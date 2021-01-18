@@ -199,7 +199,7 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
 
         if COUNT >= 1:
             start = datetime.now() 
-            DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2
+            DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2 # pylint: disable=E1136  # pylint/issues/3139
             end = datetime.now()
             if end != start:
                 execution_time.write('Chessboard_division, DIS, {}\n' .format(end - start ))
