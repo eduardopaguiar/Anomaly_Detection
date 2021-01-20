@@ -43,7 +43,7 @@ def main():
     max_granularity = 1
 
     # Number of iteration
-    iterations = 1
+    iterations = 2
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
@@ -57,13 +57,13 @@ def main():
     # Loading data into the code
 
     ### Background    
-    b_name='Reduced_Input_Background_2.csv'
+    b_name='Reduced_Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
 
     ### Signal
-    s_name='Reduced_Input_Signal_2.csv'
+    s_name='Reduced_Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -111,6 +111,7 @@ def main():
 
         for gra in range(min_granularity, max_granularity+1):
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
+        
         '''
         print('Creating pool with %d processes\n' % PROCESSES)
 
