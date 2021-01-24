@@ -154,76 +154,6 @@ def chessboard_division_2_multiprocessing(BOX_miu,Uniquesample,distancetype,i):
 
     return distance
 
-def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
-       
-    execution_time = open('execution_time_chessboard_division.csv', 'a+')
-    
-    start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_njit, {}\n' .format(end - start ))
-
-    start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_std(Uniquesample,MMtypicality,distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_std, {}\n' .format(end - start ))
-
-    start = datetime.now()
-    for i in range(W,L):
-        if distancetype == 'minkowski':
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
-        else:
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
-
-        b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        distance = np.array([a[0],b[0]]).T
-        print('std')
-        print(type(distance))
-        print(np.shape(distance)) 
-
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_2_std, {}\n' .format(end - start ))
-
-    start = datetime.now()
-
-    with mp.Pool(processes=4) as pool:
-        TASKS = [(chessboard_division_2_multiprocessing,(BOX_miu,Uniquesample,distancetype,i)) for i in range(W,L)]
-
-        res = pool.map(calculatestar, TASKS)
-        print('mp')
-        print(type(res))
-        print(np.shape(res))    
-
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_2_mp, {}\n' .format(end - start ))
-
-    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_2(distance,interval1,interval2,BOX,Uniquesample[i], NB,BOX_S, BOX_miu,BOX_X,BOXMT,MMtypicality[i])
-    end = datetime.now()
-
-    execution_time.close()
-
-    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
-
-"""
-
-    Uniquesample =  cp.asarray(Uniquesample)
-    MMtypicality =  cp.asarray(MMtypicality)
-
-    start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_cupy(Uniquesample,MMtypicality,distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_cupy, {}\n' .format(end - start ))
-
-    
-"""
-
-
-#@njit
 def chessboard_division_2(distance,interval1,interval2,BOX,Uniquesample, NB,BOX_S, BOX_miu,BOX_X,BOXMT,MMtypicality):
     
     SQ = []
@@ -250,6 +180,78 @@ def chessboard_division_2(distance,interval1,interval2,BOX,Uniquesample, NB,BOX_
         BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality
     
     return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
+
+def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
+       
+    execution_time = open('execution_time_chessboard_division.csv', 'a+')
+    
+    # Using njit in the 1st part
+    start = datetime.now()
+    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype)
+    end = datetime.now()
+    if end != start:
+        execution_time.write('Chessboard_division, chessboard_division_1_njit, {}\n' .format(end - start ))
+
+    # Using standart 1st part
+    start = datetime.now()
+    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_std(Uniquesample,MMtypicality,distancetype)
+    end = datetime.now()
+    if end != start:
+        execution_time.write('Chessboard_division, chessboard_division_1_std, {}\n' .format(end - start ))
+
+    # Using standard 2nd part   
+    start = datetime.now()
+    for i in range(W,L):
+        if distancetype == 'minkowski':
+            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
+        else:
+            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
+
+        b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
+        distance = np.array([a[0],b[0]]).T
+        print('std')
+        print(type(distance))
+        print(np.shape(distance)) 
+
+    end = datetime.now()
+    if end != start:
+        execution_time.write('Chessboard_division, chessboard_division_2_std, {}\n' .format(end - start ))
+
+    # Using multiprocessing on 2nd part
+    start = datetime.now()
+    with mp.Pool(processes=4) as pool:
+        TASKS = [(chessboard_division_2_multiprocessing,(BOX_miu,Uniquesample,distancetype,i)) for i in range(W,L)]
+
+        res = pool.map(calculatestar, TASKS)
+        print('mp')
+        print(type(res))
+        print(np.shape(res))    
+
+    end = datetime.now()
+    if end != start:
+        execution_time.write('Chessboard_division, chessboard_division_2_mp, {}\n' .format(end - start ))
+
+    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_2(distance,interval1,interval2,BOX,Uniquesample[i], NB,BOX_S, BOX_miu,BOX_X,BOXMT,MMtypicality[i])
+    end = datetime.now()
+
+    # Closing execution time file and returning the variables 
+    execution_time.close()
+
+    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
+
+"""
+
+    Uniquesample =  cp.asarray(Uniquesample)
+    MMtypicality =  cp.asarray(MMtypicality)
+
+    start = datetime.now()
+    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_cupy(Uniquesample,MMtypicality,distancetype)
+    end = datetime.now()
+    if end != start:
+        execution_time.write('Chessboard_division, chessboard_division_1_cupy, {}\n' .format(end - start ))
+
+    
+"""
 
 def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
     Centers = []
