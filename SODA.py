@@ -129,6 +129,7 @@ def Globaldensity_Calculator(data, distancetype):
     execution_time.close()
     return GD, Uniquesample, Frequency
 
+@njit
 def chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype):
     L, W = Uniquesample.shape
     if distancetype == 'euclidean':
@@ -141,10 +142,21 @@ def chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype):
     BOXMT = [MMtypicality[k] for k in range(W)]
 
     for i in range(W,L):
-        a = mydist(Uniquesample[i].reshape(1,-1), BOX_miu)
+        aux1 = 0
+        dot = 0
+        denom_a = 0
+        denom_b = 0
+        for e1, e2 in zip(BOX_miu[0],Uniquesample[i]):
+            aux1 += ((e1-e2)**2)
 
-        b = np.sqrt(mydist(Uniquesample[i].reshape(1,-1), BOX_miu, mode='cosine'))
- 
+        a = (aux1**(0.5))    
+        for e1, e2 in zip(BOX_miu[0],Uniquesample[i]):
+            dot += e1*e2
+            denom_a += e1 * e1
+            denom_b += e2 * e2
+
+        b = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) 
+
     return L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b
 
 def chessboard_division_1_std(Uniquesample,MMtypicality,distancetype):
@@ -197,7 +209,7 @@ def chessboard_division_3_std(distance,interval1,interval2,BOX,Uniquesample, NB,
 def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
        
     execution_time = open('execution_time_chessboard_division.csv', 'a+')
-    
+
     # Using njit in the 1st part
     start = datetime.now()
     L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b = chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype)
@@ -222,20 +234,6 @@ def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distan
     execution_time.close()
 
     return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
-
-"""
-
-    Uniquesample =  cp.asarray(Uniquesample)
-    MMtypicality =  cp.asarray(MMtypicality)
-
-    start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT = chessboard_division_1_cupy(Uniquesample,MMtypicality,distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_cupy, {}\n' .format(end - start ))
-
-    
-"""
 
 def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
     Centers = []
