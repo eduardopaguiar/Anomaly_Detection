@@ -130,11 +130,12 @@ def Globaldensity_Calculator(data, distancetype):
     return GD, Uniquesample, Frequency
 
 @njit
-def chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype):
+def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, distancetype):
     L, W = Uniquesample.shape
     if distancetype == 'euclidean':
         W = 1
-    BOX = [Uniquesample[k] for k in range(W)]
+
+    AUX = [Uniquesample[k] for k in range(W)]
     BOX_miu = [Uniquesample[k] for k in range(W)]
     BOX_S = [1]*W
     BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
@@ -142,33 +143,79 @@ def chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype):
     BOXMT = [MMtypicality[k] for k in range(W)]
 
     for i in range(W,L):
-        aux1 = 0
-        dot = 0
-        denom_a = 0
-        denom_b = 0
-        for e1, e2 in zip(BOX_miu[0],Uniquesample[i]):
-            aux1 += ((e1-e2)**2)
+        XA = Uniquesample[i].reshape(1,-1)
+        XB = BOX_miu
+        a = []
+        for ii in range (len(XA)):
+            aux2 = []
+            for j in range (len(XB)):
+                aux1 = []
+                bux1 = 0 
+                for e1, e2 in zip(XB[j],XA[ii,:]):
+                    aux1.append((e1-e2)**2)
+                    bux1 += ((e1-e2)**2)
+                aux2.append(bux1**(0.5))
+            a.append(aux2)
+        #a = np.array(a)
+            
+        b = []
+        for ii in range(len(XA)):
+            aux1 = []
+            for j in range(len(XB)):
+                dot = 0
+                denom_a = 0
+                denom_b = 0
+                for k in range (len(XB[j])):
+                    dot += (XB[j][k]*XA[ii,k])
+                    denom_a += (XB[j][k] * XB[j][k])
+                    denom_b += (XA[ii,k] * XA[ii,k])
 
-        a = (aux1**(0.5))    
-        for e1, e2 in zip(BOX_miu[0],Uniquesample[i]):
-            dot += e1*e2
-            denom_a += e1 * e1
-            denom_b += e2 * e2
+                aux1.append((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)
+            b.append(aux1)
+        #b = np.array(b)
+        distance = np.array([a[0],b[0]]).T
+        
+        SQ = []
+        for j,d in enumerate(distance):
+            if d[0] < interval1 and d[1] < interval2:
+                SQ.append(j)
+        COUNT = len(SQ)
 
-        b = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) 
+        if COUNT == 0:
+            AUX.append(Uniquesample[i])
+            NB = NB + 1
+            BOX_S.append(1)
+            BOX_miu.append(Uniquesample[i])
+            BOX_X.append(np.sum(Uniquesample[i]**2))
+            BOXMT.append(MMtypicality[i])
 
-    return L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b
+        if COUNT >= 1:
+            DIS = [distance[S,0]/interval1[0] + distance[S,1]/interval2[0] for S in SQ]# pylint: disable=E1136  # pylint/issues/3139
+            b = 0
+            mini = DIS[0]
+            for ii in range(1,len(DIS)):
+                if DIS[ii] < mini:
+                    mini = DIS[ii]
+                    b = ii
+            BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
+            for ii in range(len(Uniquesample[i])): BOX_miu[SQ[b]][ii] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]][ii] + Uniquesample[i][ii]/BOX_S[SQ[b]]
+            BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + np.sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
+            BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i] 
+            
+    return AUX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
 
-def chessboard_division_1_std(Uniquesample,MMtypicality,distancetype):
+def chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, distancetype):
     L, W = Uniquesample.shape
     if distancetype == 'euclidean':
         W = 1
+
     BOX = [Uniquesample[k] for k in range(W)]
     BOX_miu = [Uniquesample[k] for k in range(W)]
     BOX_S = [1]*W
-    BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
+    BOX_X = [sum(Uniquesample[k]**2) for k in range(W)]
     NB = W
     BOXMT = [MMtypicality[k] for k in range(W)]
+
     for i in range(W,L):
         if distancetype == 'minkowski':
             a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
@@ -176,59 +223,48 @@ def chessboard_division_1_std(Uniquesample,MMtypicality,distancetype):
             a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
 
         b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
+        distance = np.array([a[0],b[0]]).T
 
-    return L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b
+        SQ = []
+        for j,d in enumerate(distance):
+            if d[0] < interval1 and d[1] < interval2:
+                SQ.append(j)
+        
+        COUNT = len(SQ)
+        if COUNT == 0:
+            BOX.append(Uniquesample[i])
+            NB = NB + 1
+            BOX_S.append(1)
+            BOX_miu.append(Uniquesample[i])
+            BOX_X.append(sum(Uniquesample[i]**2))
+            BOXMT.append(MMtypicality[i])
+        if COUNT >= 1:
+            DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2 # pylint: disable=E1136  # pylint/issues/3139
+            b = np.argmin(DIS)
+            BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
+            BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample[i]/BOX_S[SQ[b]]
+            BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
+            BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i]
 
-def chessboard_division_3_std(distance,interval1,interval2,BOX,Uniquesample, NB,BOX_S, BOX_miu,BOX_X,BOXMT,MMtypicality):
-    
-    SQ = []
-    for j,d in enumerate(distance):
-        if d[0] < interval1 and d[1] < interval2:
-            SQ.append(j)
-
-    #SQ = np.argwhere(distance[::,0]<interval1 and (distance[::,1]<interval2))
-    COUNT = len(SQ)
-    if COUNT == 0:
-        BOX.append(Uniquesample)
-        NB = NB + 1
-        BOX_S.append(1)
-        BOX_miu.append(Uniquesample)
-        BOX_X.append(np.sum(Uniquesample**2))
-        BOXMT.append(MMtypicality)  
-
-    if COUNT >= 1:
-        DIS = [distance[SQ[i],0]/interval1 + distance[SQ[i],1]/interval2 for i in range(len(SQ))]
-        b = np.argmin(DIS)
-        BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
-        BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample/BOX_S[SQ[b]]
-        BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + np.sum(Uniquesample**2)/BOX_S[SQ[b]]
-        BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality
-    
     return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
 
 def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
        
     execution_time = open('execution_time_chessboard_division.csv', 'a+')
 
-    # Using njit in the 1st part
+    # Using njit in the part
     start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b = chessboard_division_1_njit(Uniquesample,MMtypicality,distancetype)
+    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, distancetype)
     end = datetime.now()
     if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_njit, {}\n' .format(end - start ))
+        execution_time.write('Chessboard_division, chessboard_division_njit, {}\n' .format(end - start ))
 
-    # Using standart 1st part
+    # Using standart part
     start = datetime.now()
-    L,W,BOX,BOX_miu,BOX_S,BOX_X,NB,BOXMT,a,b = chessboard_division_1_std(Uniquesample,MMtypicality,distancetype)
+    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, distancetype)
     end = datetime.now()
     if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_1_std, {}\n' .format(end - start ))
-
-    distance = np.array([a[0],b[0]]).T
-
-    # Using standard 3rd part
-    for i in range(W,L):
-        BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_3_std(distance,interval1,interval2,BOX,Uniquesample[i], NB,BOX_S, BOX_miu,BOX_X,BOXMT,MMtypicality[i])
+        execution_time.write('Chessboard_division, chessboard_division_std, {}\n' .format(end - start ))
 
     # Closing execution time file and returning the variables 
     execution_time.close()

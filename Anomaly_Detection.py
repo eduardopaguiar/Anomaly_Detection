@@ -43,7 +43,7 @@ def main():
     max_granularity = 1
 
     # Number of iteration
-    iterations = 3
+    iterations = 34
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
@@ -61,6 +61,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
+    print(background.shape)
 
     ### Signal
     s_name='Reduced_Input_Signal_1.csv'
