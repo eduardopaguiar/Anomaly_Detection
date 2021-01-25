@@ -18,7 +18,6 @@ from sklearn import preprocessing
 import sklearn
 from sklearn.utils.validation import check_array
 
-
 class performance(threading.Thread):
     # Declares variables for perfomance analysis:
     
