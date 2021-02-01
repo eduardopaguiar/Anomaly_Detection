@@ -135,7 +135,7 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
     if distancetype == 'euclidean':
         W = 1
 
-    AUX = [Uniquesample[k] for k in range(W)]
+    BOX = [Uniquesample[k] for k in range(W)]
     BOX_miu = [Uniquesample[k] for k in range(W)]
     BOX_S = [1]*W
     BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
@@ -156,7 +156,6 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
                     bux1 += ((e1-e2)**2)
                 aux2.append(bux1**(0.5))
             a.append(aux2)
-        #a = np.array(a)
             
         b = []
         for ii in range(len(XA)):
@@ -172,7 +171,6 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
 
                 aux1.append((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)
             b.append(aux1)
-        #b = np.array(b)
         distance = np.array([a[0],b[0]]).T
         
         SQ = []
@@ -182,7 +180,7 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
         COUNT = len(SQ)
 
         if COUNT == 0:
-            AUX.append(Uniquesample[i])
+            BOX.append(Uniquesample[i])
             NB = NB + 1
             BOX_S.append(1)
             BOX_miu.append(Uniquesample[i])
@@ -198,11 +196,11 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
                     mini = DIS[ii]
                     b = ii
             BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
-            for ii in range(len(Uniquesample[i])): BOX_miu[SQ[b]][ii] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]][ii] + Uniquesample[i][ii]/BOX_S[SQ[b]]
+            BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample[i]/BOX_S[SQ[b]]
             BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + np.sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
             BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i] 
-            
-    return AUX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
+
+    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
 
 def chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, distancetype):
     L, W = Uniquesample.shape
