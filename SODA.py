@@ -7,7 +7,6 @@ from numba import njit,jit
 import cupy as cp
 import multiprocessing as mp
 
-
 def mydist(XA,XB,mode= 'euclidean'):
     if mode == 'euclidean':
         aux3 = []
@@ -102,7 +101,7 @@ def pi_calculator(Uniquesample, mode):
 def Globaldensity_Calculator(data, distancetype):
     Uniquesample, J, K = np.unique(data, axis=0, return_index=True, return_inverse=True)
     Frequency, _ = np.histogram(K,bins=len(J))
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     start = datetime.now()
     uspi1 = pi_calculator(Uniquesample, distancetype)
     end = datetime.now()
@@ -248,7 +247,7 @@ def chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, di
 
 def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
        
-    execution_time = open('execution_time_chessboard_division.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/_chessboard_division.csv', 'a+')
 
     # Using njit in the part
     start = datetime.now()
@@ -274,7 +273,7 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
     n = 2
     ModeNumber = 0
     
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     start = datetime.now()
     if distancetype == 'minkowski':
         distance1 = squareform(pdist(BOX_miu,metric=distancetype, p=1.5))
@@ -378,7 +377,7 @@ def cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_tr
     Count = []
 
 
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     start = datetime.now()
     if distancetype == 'minkowski':
         distance1 = cdist(Uniquesample,Center_samples, metric=distancetype, p=1.5)/grid_trad
@@ -411,7 +410,7 @@ def cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_tr
 
 def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
        
-    execution_time = open('execution_time_cloud_member_recruitment.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/_cloud_member_recruitment.csv', 'a+')
 
     # Using standart part
     start = datetime.now()
@@ -445,7 +444,7 @@ def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     COUNT = 0
     SQ = []
 
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     for i in range(NB):
 
         start = datetime.now()
@@ -494,7 +493,7 @@ def Chessboard_online_merge(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     threshold2=intervel2/2
     NB1=0
     
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     while NB1 != NB:
         CC = 0
         NB1 = NB
@@ -545,7 +544,7 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
     ModeNumber = 0
     n = 2
     
-    execution_time = open('execution_time.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     for ii in range(NB):
         Reference = BOX_miu[ii]
         distance1 = np.zeros((NB,1))
@@ -576,7 +575,7 @@ def ChessBoard_online_projection(BOX_miu,BOXMT,NB,interval1,interval2):
 
 def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
     
-    execution_time = open('execution_time_main_SODA.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/_main_SODA.csv', 'a+')
     if Mode == 'Offline':
         data = Input['StaticData']
         L, W = data.shape

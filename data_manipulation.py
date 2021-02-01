@@ -197,7 +197,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     ax.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
+    fig.savefig('/AtlasDisk/user/pestana/Percentage_of_Variance_Held.png', bbox_inches='tight')
                         
     sorted_sensors_contribution = attributes_influence.values[:]      
                         
@@ -218,7 +218,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     plt.xticks(rotation=90)
     ax.grid()
     
-    fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
+    fig.savefig('/AtlasDisk/user/pestana/Attributes_Contribution.png', bbox_inches='tight')
 
     return
 
@@ -491,5 +491,5 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
     performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
 
-    detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-    performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    detection_info.to_csv('/AtlasDisk/user/pestana/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    performance_info.to_csv('/AtlasDisk/user/pestana/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)

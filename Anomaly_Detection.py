@@ -57,14 +57,14 @@ def main():
     # Loading data into the code
 
     ### Background    
-    b_name='Reduced_Input_Background_1.csv'
+    b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
     print(background.shape)
 
     ### Signal
-    s_name='Reduced_Input_Signal_1.csv'
+    s_name='/AtlasDisk/user/pestana/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -84,8 +84,8 @@ def main():
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
 
-        np.savetxt('Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
-        np.savetxt('Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
+        #np.savetxt('/home/thiago/Output/Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
+        #np.savetxt('/home/thiago/Output/Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
 
         # Concatenating Signal and the Test Background sub-set
 
