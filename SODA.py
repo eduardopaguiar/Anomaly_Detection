@@ -7,41 +7,6 @@ from numba import njit,jit
 import cupy as cp
 import multiprocessing as mp
 
-def mydist(XA,XB,mode= 'euclidean'):
-    if mode == 'euclidean':
-        aux3 = []
-        for i in range (len(XA)):
-            aux2 = []
-            for j in range (len(XB)):
-                aux1 = []
-                bux1 = 0 
-                # calculate distance
-                for e1, e2 in zip(XB[j],XA[i,:]):
-                    aux1.append((e1-e2)**2)
-                    bux1 += ((e1-e2)**2)
-
-                    #aux1.append(sqrt(sum((e1-e2)**2)))
-                aux2.append(bux1**(0.5))
-            aux3.append(aux2)
-        return aux3
-    
-    if mode == 'cosine':
-        aux2 = []
-        for i in range(len(XA)):
-            aux1 = []
-            for j in range(len(XB)):
-                dot = 0
-                denom_a = 0
-                denom_b = 0
-                #for k in range (len(XB[j])):
-                dot += (XB[j]*XA[i])
-                denom_a += (XB[j] * XB[j])
-                denom_b += (XA[i] * XA[i])
-
-                aux1.append(1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))
-
-        return aux1
-
 def grid_set(data, N):
 
     _ , W = data.shape
@@ -201,73 +166,6 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
 
     return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
 
-def chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, distancetype):
-    L, W = Uniquesample.shape
-    if distancetype == 'euclidean':
-        W = 1
-
-    BOX = [Uniquesample[k] for k in range(W)]
-    BOX_miu = [Uniquesample[k] for k in range(W)]
-    BOX_S = [1]*W
-    BOX_X = [sum(Uniquesample[k]**2) for k in range(W)]
-    NB = W
-    BOXMT = [MMtypicality[k] for k in range(W)]
-
-    for i in range(W,L):
-        if distancetype == 'minkowski':
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype, p=1.5)
-        else:
-            a = cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric=distancetype)
-
-        b = np.sqrt(cdist(Uniquesample[i].reshape(1,-1), BOX_miu, metric='cosine'))
-        distance = np.array([a[0],b[0]]).T
-
-        SQ = []
-        for j,d in enumerate(distance):
-            if d[0] < interval1 and d[1] < interval2:
-                SQ.append(j)
-        
-        COUNT = len(SQ)
-        if COUNT == 0:
-            BOX.append(Uniquesample[i])
-            NB = NB + 1
-            BOX_S.append(1)
-            BOX_miu.append(Uniquesample[i])
-            BOX_X.append(sum(Uniquesample[i]**2))
-            BOXMT.append(MMtypicality[i])
-        if COUNT >= 1:
-            DIS = distance[SQ[::],0]/interval1 + distance[SQ[::],1]/interval2 # pylint: disable=E1136  # pylint/issues/3139
-            b = np.argmin(DIS)
-            BOX_S[SQ[b]] = BOX_S[SQ[b]] + 1
-            BOX_miu[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_miu[SQ[b]] + Uniquesample[i]/BOX_S[SQ[b]]
-            BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
-            BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i]
-
-    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
-
-def chessboard_division(Uniquesample, MMtypicality, interval1, interval2, distancetype):
-       
-    execution_time = open('/AtlasDisk/user/pestana/Output/_chessboard_division.csv', 'a+')
-
-    # Using njit in the part
-    start = datetime.now()
-    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_njit, {}\n' .format(end - start ))
-
-    # Using standart part
-    start = datetime.now()
-    BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB = chessboard_division_std(Uniquesample, MMtypicality, interval1, interval2, distancetype)
-    end = datetime.now()
-    if end != start:
-        execution_time.write('Chessboard_division, chessboard_division_std, {}\n' .format(end - start ))
-
-    # Closing execution time file and returning the variables 
-    execution_time.close()
-
-    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
-
 def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
     Centers = []
     n = 2
@@ -368,70 +266,7 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
     
     MemberNumber = Count
     ret_B = np.array(B).reshape(-1,1)
-    return Members,MemberNumber,Membership,ret_B 
-
-def cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
-    L, W = Uniquesample.shape
-    Membership = np.zeros((L,ModelNumber))
-    Members = np.zeros((L,ModelNumber*W))
-    Count = []
-
-
-    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
-    start = datetime.now()
-    if distancetype == 'minkowski':
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype, p=1.5)/grid_trad
-    else:
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype)/grid_trad
-    end = datetime.now()
-    if end != start:
-        execution_time.write('cloud_member_recruitment, cdist, {}\n' .format(end - start ))
-
-    start = datetime.now()
-    distance2 = np.sqrt(cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
-    end = datetime.now()
-    if end != start:
-        execution_time.write('cloud_member_recruitment, cdist cosine, {}\n' .format(end - start ))
-    execution_time.close()
-
-
-    distance3 = distance1 + distance2
-    B = distance3.argmin(1)
-    for i in range(ModelNumber):
-        seq = []
-        for j,b in enumerate(B):
-            if b == i:
-                seq.append(j)
-        Count.append(len(seq))
-        Membership[:Count[i]:,i] = seq
-        Members[:Count[i]:,W*i:W*(i+1)] = [Uniquesample[j] for j in seq]
-    MemberNumber = Count
-    return Members,MemberNumber,Membership,B 
-
-def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
-       
-    execution_time = open('/AtlasDisk/user/pestana/Output/_cloud_member_recruitment.csv', 'a+')
-
-    # Using standart part
-    start = datetime.now()
-    Members, MemberNumber, Membership, B  = cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype)    
-    end = datetime.now()
-    if end != start:
-        execution_time.write('cloud_member_recruitment, cloud_member_recruitment_std, {}\n' .format(end - start ))
-
-    # Closing execution time file and returning the variables 
-
-
-    # Using njit in the part
-    start = datetime.now()
-    Members, MemberNumber, Membership, B  = cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype)    
-    end = datetime.now()
-    if end != start:
-        execution_time.write('cloud_member_recruitment, cloud_member_recruitment_njit, {}\n' .format(end - start ))
-
-    execution_time.close()
-
-    return Members,MemberNumber,Membership,B 
+    return Members,MemberNumber,Membership,ret_B  
 
 def data_standardization(data,X_global,mean_global,mean_global2,k):
     mean_global_new = k/(k+1)*mean_global+data/(k+1)
@@ -595,10 +430,10 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             execution_time.write('Globaldensity_Calculator, {}, {}, {}\n' .format(Mode, N, end - start ))
 
         start = datetime.now()
-        BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division(Uniquesample,GD,grid_trad,grid_angl, distancetype)
+        BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         end = datetime.now()
         if end != start:
-            execution_time.write('chessboard_division, {}, {}, {}\n' .format(Mode, N, end - start ))
+            execution_time.write('chessboard_division_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
 
         start = datetime.now()
         Center,ModeNumber = ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
@@ -607,10 +442,10 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             execution_time.write('ChessBoard_PeakIdentification, {}, {}, {}\n' .format(Mode, N, end - start ))
 
         start = datetime.now()
-        Members,Membernumber,Membership,IDX = cloud_member_recruitment(ModeNumber,Center,data,grid_trad,grid_angl, distancetype)
+        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center,data,grid_trad,grid_angl, distancetype)
         end = datetime.now()
         if end != start:
-            execution_time.write('cloud_member_recruitment, {}, {}, {}\n' .format(Mode, N, end - start ))
+            execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
@@ -675,10 +510,10 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             execution_time.write('ChessBoard_online_projection, {}, {}, {}\n' .format(Mode, N, end - start ))
 
         start = datetime.now()
-        Members, Membernumber, _, IDX = cloud_member_recruitment(ModeNumber, Center, data, interval1, interval2, distancetype)
+        Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center, data, interval1, interval2, distancetype)
         end = datetime.now()
         if end != start:
-            execution_time.write('cloud_member_recruitment, {}, {}, {}\n' .format(Mode, N, end - start ))
+            execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
         
         
         Boxparameter['BOX']=BOX
