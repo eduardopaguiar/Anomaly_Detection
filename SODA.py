@@ -305,7 +305,75 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
             ModeNumber = ModeNumber + 1
     return Centers, ModeNumber
 
-def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
+@njit
+def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
+    L, W = Uniquesample.shape
+    Membership = np.zeros((L,ModelNumber))
+    Members = np.zeros((L,ModelNumber*W))
+    Count = []
+    
+    distance1 = []
+    for ii in range(L):
+        aux2 = []
+        for j in range (len(Center_samples)):
+            aux1 = []
+            bux1 = 0 
+            for k in range(W):
+                aux1.append((Center_samples[j][k]-Uniquesample[ii,k])**2)
+                bux1 += ((Center_samples[j][k]-Uniquesample[ii,k])**2)
+            aux2.append((bux1**(0.5))/grid_trad)
+        distance1.append(aux2)
+
+    
+    distance2 = []
+    for ii in range(L):
+        aux1 = []
+        for j in range(len(Center_samples)):
+            dot = 0
+            denom_a = 0
+            denom_b = 0
+            for k in range (len(Center_samples[j])):
+                dot += (Center_samples[j][k]*Uniquesample[ii,k])
+                denom_a += (Center_samples[j][k] * Center_samples[j][k])
+                denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k])
+
+            aux1.append(((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)/grid_angl)
+        distance2.append(aux1)
+    
+    distance3 = []
+    for i in range(len(distance1)):
+        aux = []
+        for j in range(len(distance1[0])):
+            aux.append(distance1[i][j] + distance2[i][j])
+        distance3.append(aux)
+    
+    
+    B = []
+    for dist3 in distance3:
+        mini = dist3[0]
+        mini_idx = 0
+        for ii in range(1, len(dist3)):
+            if dist3[ii] < mini:
+                mini = dist3[ii]
+                mini_idx = ii
+        B.append(mini_idx)
+    
+    for i in range(ModelNumber):
+        seq = []
+        for j,b in enumerate(B):
+            if b == i:
+                seq.append(j)
+        Count.append(len(seq))
+        for ii, j in zip(range(min(Count[i],L)), seq):
+            Membership[ii,i] = j
+            for k in range(W):
+                Members[ii,W*i+k] = Uniquesample[j,k]
+    
+    MemberNumber = Count
+    ret_B = np.array(B).reshape(-1,1)
+    return Members,MemberNumber,Membership,ret_B 
+
+def cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     L, W = Uniquesample.shape
     Membership = np.zeros((L,ModelNumber))
     Members = np.zeros((L,ModelNumber*W))
@@ -341,6 +409,31 @@ def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,g
         Membership[:Count[i]:,i] = seq
         Members[:Count[i]:,W*i:W*(i+1)] = [Uniquesample[j] for j in seq]
     MemberNumber = Count
+    return Members,MemberNumber,Membership,B 
+
+def cloud_member_recruitment(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
+       
+    execution_time = open('execution_time_cloud_member_recruitment.csv', 'a+')
+
+    # Using standart part
+    start = datetime.now()
+    Members, MemberNumber, Membership, B  = cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype)    
+    end = datetime.now()
+    if end != start:
+        execution_time.write('cloud_member_recruitment, cloud_member_recruitment_std, {}\n' .format(end - start ))
+
+    # Closing execution time file and returning the variables 
+
+
+    # Using njit in the part
+    start = datetime.now()
+    Members, MemberNumber, Membership, B  = cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype)    
+    end = datetime.now()
+    if end != start:
+        execution_time.write('cloud_member_recruitment, cloud_member_recruitment_njit, {}\n' .format(end - start ))
+
+    execution_time.close()
+
     return Members,MemberNumber,Membership,B 
 
 def data_standardization(data,X_global,mean_global,mean_global2,k):

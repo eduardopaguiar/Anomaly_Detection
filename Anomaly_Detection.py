@@ -43,7 +43,7 @@ def main():
     max_granularity = 1
 
     # Number of iteration
-    iterations = 10
+    iterations = 1
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
