@@ -64,7 +64,7 @@ def main():
     print(background.shape)
 
     ### Signal
-    s_name='/AtlasDisk/user/pestana/Input_Signal_1.csv'
+    s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
