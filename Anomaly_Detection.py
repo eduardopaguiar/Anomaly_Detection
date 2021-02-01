@@ -82,11 +82,6 @@ def main():
         # Devide online signal
         reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
 
-        # Nextly, the Signal data processed is saved in the Analised data directory.
-
-        #np.savetxt('/home/thiago/Output/Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
-        #np.savetxt('/home/thiago/Output/Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
-
         # Concatenating Signal and the Test Background sub-set
 
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
@@ -112,19 +107,6 @@ def main():
 
         for gra in range(min_granularity, max_granularity+1):
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
-        
-        '''
-        print('Creating pool with %d processes\n' % PROCESSES)
-
-        with multiprocessing.Pool(PROCESSES) as pool:
-
-            #
-            # Tests
-            print("=== Criar Tasks ===")
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in range(min_granularity, max_granularity + 1)]
-
-            pool.map(calculatestar, TASKS)'''
 
             
 
