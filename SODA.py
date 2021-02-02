@@ -4,8 +4,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from numba import njit,jit
-import cupy as cp
-import multiprocessing as mp
 
 def grid_set(data, N):
 
