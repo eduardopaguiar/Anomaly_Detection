@@ -29,8 +29,8 @@ def calculatestar(args):
 
 
 def main():
-    #-------------------------------------------------------------------------------------#
-    #---------------------------------Initiation Part-------------------------------------#
+    #----------------------------------------------------------------------------#
+    #---_--------------------Initiation Part-------------------------------------#
 
     ####### Variables set by user #######
 
@@ -40,7 +40,7 @@ def main():
     # Range of SODA granularities
     min_granularity = 1
 
-    max_granularity = 1
+    max_granularity = 30
 
     # Number of iteration
     iterations = 2
