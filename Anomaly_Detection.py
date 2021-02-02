@@ -43,7 +43,7 @@ def main():
     max_granularity = 30
 
     # Number of iteration
-    iterations = 2
+    iterations = 33
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
@@ -61,7 +61,6 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    print(background.shape)
 
     ### Signal
     s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
@@ -70,6 +69,8 @@ def main():
     #signal = signal[1:,:]
 
     for n_i in range(iterations):
+
+        print('Iteration: ',n_i)
 
         # Devide data-set into training and testing sub-sets
 
@@ -106,6 +107,7 @@ def main():
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
         for gra in range(min_granularity, max_granularity+1):
+            print('granularity: ',gra)
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
 
             
