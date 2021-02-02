@@ -43,7 +43,7 @@ def main():
     max_granularity = 1
 
     # Number of iteration
-    iterations = 2
+    iterations = 5
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 1
@@ -57,14 +57,14 @@ def main():
     # Loading data into the code
 
     ### Background    
-    b_name='Reduced_Input_Background_1.csv'
+    b_name='Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
     print(background.shape)
 
     ### Signal
-    s_name='Reduced_Input_Signal_1.csv'
+    s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
@@ -83,10 +83,10 @@ def main():
         reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
-
+        """
         np.savetxt('Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
         np.savetxt('Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
-
+        """
         # Concatenating Signal and the Test Background sub-set
 
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
