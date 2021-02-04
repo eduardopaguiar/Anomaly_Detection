@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from numba import njit,jit
+from numba.typed import List
 
 def grid_set(data, N):
 
@@ -508,7 +509,8 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             execution_time.write('ChessBoard_online_projection, {}, {}, {}\n' .format(Mode, N, end - start ))
 
         start = datetime.now()
-        Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center, data, interval1, interval2, distancetype)
+        Center_numba = List(Center)
+        Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         end = datetime.now()
         if end != start:
             execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
