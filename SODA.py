@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from numba import njit,jit
+from numba.typed import List
 import cupy as cp
 import multiprocessing as mp
 
@@ -433,7 +434,7 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     Density_1 = uspi1/sum_uspi1
     uspi2 = pi_calculator(Hypermean,'cosine')
     sum_uspi2 = np.sum(uspi2)
-    Density_2 = uspi1/sum_uspi2;
+    Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport
     return Hyper_GD
 
@@ -504,11 +505,12 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         if end != start:
             execution_time.write('ChessBoard_PeakIdentification, {}, {}, {}\n' .format(Mode, N, end - start ))
 
+        Center_numba = List(Center)
         start = datetime.now()
-        Members,Membernumber,Membership,IDX = cloud_member_recruitment(ModeNumber,Center,data,grid_trad,grid_angl, distancetype)
+        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
         end = datetime.now()
         if end != start:
-            execution_time.write('cloud_member_recruitment, {}, {}, {}\n' .format(Mode, N, end - start ))
+            execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
