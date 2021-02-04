@@ -5,3 +5,6 @@ Reduced_Input_Signal_1.csv
 *.ods
 *.csv
 *.png
+*.png
+*.csv
+results/*
