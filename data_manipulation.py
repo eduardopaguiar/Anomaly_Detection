@@ -394,7 +394,7 @@ def statistics_attributes(data):
 def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration):
     # Formmating  Data
     offline_data = np.matrix(offline_data)
-    """
+
     L1 = len(offline_data)
 
     streaming_data = np.matrix(streaming_data)
@@ -417,13 +417,12 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     
     detection_info.loc[0,'Granularity'] = gra
     performance_info.loc[0,'Granularity'] = gra
-    """
+
     Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
 
     out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Offline')
 
     # Concatanating IDs and creating labels
-    """
     label = np.zeros((len(streaming_data)))
     label[n_backgound:] = 1
 
@@ -494,4 +493,4 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
 
     detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
     performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-    """
+
