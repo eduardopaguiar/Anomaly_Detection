@@ -40,7 +40,7 @@ def main():
     # Range of SODA granularities
     min_granularity = 1
 
-    max_granularity = 1
+    max_granularity = 30
 
     # Number of iteration
     iterations = 5
@@ -57,14 +57,14 @@ def main():
     # Loading data into the code
 
     ### Background    
-    b_name='Input_Background_1.csv'
+    b_name='Reduced_Input_Background_2.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
     print(background.shape)
 
     ### Signal
-    s_name='Input_Signal_1.csv'
+    s_name='Reduced_Input_Signal_2.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     #signal = signal[1:,:]
