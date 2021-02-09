@@ -68,7 +68,7 @@ def divide(data, n_windows = 100, n_samples = 50):
     
     if int(L % n_windows) != 0:
         
-        # Checking if we need to peak the same amount of data from each window
+        # Checking if we need to pick the same amount of data from each window
         
         if int(n_samples % n_windows) != 0 or (n_samples/n_windows) % 1 != 0:
             
@@ -245,7 +245,7 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     pca_variation = pca.explained_variance_ratio_ * 100
     
 
-    print('Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
+    print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
 
     proj_background_train = pca.transform(background_train)
     proj_streaming_data = pca.transform(streaming_data)

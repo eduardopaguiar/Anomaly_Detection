@@ -17,8 +17,7 @@ import multiprocessing
 from sklearn.utils.validation import check_array
 import sys
 
-#-------------------------------------------------------------------------------------#
-#-------------------------------------Main Code---------------------------------------#
+#-------------------------Main Code--------------------------#
 
 def calculate(func, args):
     result = func(*args)
@@ -29,58 +28,77 @@ def calculatestar(args):
 
 
 def main():
-    #-------------------------------------------------------------------------------------#
-    #---------------------------------Initiation Part-------------------------------------#
+    #------------------------------------------------------------#
+    #-------------------Initiation Part--------------------------#
 
     ####### Variables set by user #######
 
     # PCA number of components
     N_PCs = 8
 
-    # Range of SODA granularities
-    min_granularity = 1
+    # List of granularities 
+    gra_list = [1, 2] 
 
-    max_granularity = 30
-
-    gra_list = [1, 23] #[i for i in range(min_granularity, max_granularity + 1)]
     # Number of iteration
-    iterations = 10
+    iterations = 2
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 1
+    PROCESSES = 2
 
     # Number of Data-set divisions
     windows = 100
 
+    # Percentage of background samples on the testing phase
+    background_percent = 99
+
     # Firstly the model loads the background and signal data, then it removes the 
     # attributes first string line, in order to avoid NaN values in the array.
 
-    # Loading data into the code
+    # Using multiprocess to load the data-sets into the code
+
+    print('         ==== Commencing Initiation ====\n')
 
     ### Background    
-    b_name='Input_Background_1.csv'
+    b_name='Reduced_Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    print(background.shape)
+
+    print("     .Background Loaded...")
 
     ### Signal
-    s_name='Input_Signal_1.csv'
+    s_name='Reduced_Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    #signal = signal[1:,:]
+    signal = signal[1:,:]
+
+    print("     .Signal Loaded...")
+
+    print('\n          ==== Initiation Complete ====\n')
+    print('=*='*17)
+
+    print('      ==== Commencing Data Processing ====')
 
     for n_i in range(iterations):
 
+        print('\n     => Iteration Number', (n_i+1))
+
         # Devide data-set into training and testing sub-sets
+
+        print('         .Deviding training and testing sub-sets')
 
         background_train, background_test = train_test_split(background, test_size=0.40, random_state=42)
 
         # Defining number of events Signal events on online phase.
 
-        signal_online_samples = int(len(background_test)/99)
+        signal_online_samples = int(len(background_test)/background_percent)
 
         # Devide online signal
+
+        print('         .Selecting Signal on the following porpotion:')
+        print('             .' + str(background_percent) + '% Background samples')
+        print('             .' + str(100-background_percent) + '% Signal samples')
+
         reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
@@ -92,41 +110,56 @@ def main():
 
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
+        # Normalize Data
+
+        print('         .Normalizing Data')
+        
         norm_streaming_data = dm.Normalisation(streaming_data)
         norm_background_train = dm.Normalisation(background_train)
 
         # Calculates Statistical attributes
 
+        print('         .Calculating statistical attributes')
+
         xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
         xyz_background_train = dm.statistics_attributes(norm_background_train)
 
         # Normalize Features
+
+        print('         .Normalizing Features')
+
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
         norm_xyz_background_train = dm.Normalisation(xyz_background_train)
 
         # Calculates PCA and projects the sub-sets 
 
+        print('         .Calculating PCA:')
+
         proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
 
         # Plots PCA results
+
+        print('         .Ploting PCA results')
+
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
-        #for gra in range(min_granularity, max_granularity+1):
-        #    dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
-        
+        """
+        for gra in range(min_granularity, max_granularity+1):
+            dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
+        """
     
-        print('Creating pool with %d processes\n' % PROCESSES)
-
+        print('         .Creating pool with %d processes:' % PROCESSES)
+    
         with multiprocessing.Pool(PROCESSES) as pool:
 
-            #
-            # Tests
-            print("=== Criar Tasks ===")
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i,1)) for gra in gra_list]
+            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)) for gra in gra_list]
+    
+            print('             .Executing SODA for granularities', gra_list)
 
             pool.map(calculatestar, TASKS)
-
+            
+    print('\n        ====Data Processing Complete====\n')
+    print('=*='*17)
             
 
 if __name__ == '__main__':
