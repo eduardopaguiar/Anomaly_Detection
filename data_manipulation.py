@@ -444,7 +444,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     for j in range (len(soda_labels)):
         if j < L1:
             cloud_info.loc[int(soda_labels[j]),'Old_Samples'] += 1
-
         cloud_info.loc[int(soda_labels[j]),'Total_Samples'] += 1
 
     cloud_info.loc[:,'Percentage_Old_Samples'] = cloud_info.loc[:,'Old_Samples'] * 100 / cloud_info.loc[:,'Total_Samples']
@@ -477,7 +476,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
             
             else:
                 detection_info.loc[0,'False_Positive'] += 1
-
     
     detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
 

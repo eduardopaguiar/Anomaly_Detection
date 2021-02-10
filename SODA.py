@@ -8,7 +8,6 @@ from numba.typed import List
 import numba as nb
 import cupy as cp
 import multiprocessing as mp
-
 import pickle
 
 def grid_set(data, N):
@@ -679,10 +678,6 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
 
-            #print('---------')
-            #print(type(BOX))
-            #print(type(BOX_miu))
-            #print(type(BOX_S))
             var = {'Data2[k,:]':Data2[k,:], 
                     'BOX':BOX, 
                     'BOX_miu':BOX_miu, 
@@ -692,7 +687,6 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
                     'interval2':interval2}
             pickle.dump(var, open('var1.pickle', 'wb'))
             start = datetime.now()
-            #BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_std(Data2[k,:], BOX, BOX_miu, BOX_S, NB, interval1, interval2)
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
             BOX = np.asarray(BOX)
             BOX_miu = np.asarray(BOX_miu)
