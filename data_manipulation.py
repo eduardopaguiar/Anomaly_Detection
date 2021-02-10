@@ -68,7 +68,7 @@ def divide(data, n_windows = 100, n_samples = 50):
     
     if int(L % n_windows) != 0:
         
-        # Checking if we need to peak the same amount of data from each window
+        # Checking if we need to pick the same amount of data from each window
         
         if int(n_samples % n_windows) != 0 or (n_samples/n_windows) % 1 != 0:
             
@@ -197,7 +197,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     ax.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    fig.savefig('/AtlasDisk/user/pestana/Output/results/Percentage_of_Variance_Held.png', bbox_inches='tight')
+    fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
                         
     sorted_sensors_contribution = attributes_influence.values[:]      
                         
@@ -218,7 +218,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     plt.xticks(rotation=90)
     ax.grid()
     
-    fig.savefig('/AtlasDisk/user/pestana/Output/results/Attributes_Contribution.png', bbox_inches='tight')
+    fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
 
     return
 
@@ -245,7 +245,7 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     pca_variation = pca.explained_variance_ratio_ * 100
     
 
-    print('Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
+    print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
 
     proj_background_train = pca.transform(background_train)
     proj_streaming_data = pca.transform(streaming_data)
@@ -394,6 +394,7 @@ def statistics_attributes(data):
 def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Iteration):
     # Formmating  Data
     offline_data = np.matrix(offline_data)
+    
     L1 = len(offline_data)
 
     streaming_data = np.matrix(streaming_data)
@@ -416,13 +417,13 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     
     detection_info.loc[0,'Granularity'] = gra
     performance_info.loc[0,'Granularity'] = gra
-
+    
     Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
 
     out = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input,'Offline')
 
     # Concatanating IDs and creating labels
-        
+    
     label = np.zeros((len(streaming_data)))
     label[n_backgound:] = 1
 
@@ -443,7 +444,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     for j in range (len(soda_labels)):
         if j < L1:
             cloud_info.loc[int(soda_labels[j]),'Old_Samples'] += 1
-
         cloud_info.loc[int(soda_labels[j]),'Total_Samples'] += 1
 
     cloud_info.loc[:,'Percentage_Old_Samples'] = cloud_info.loc[:,'Old_Samples'] * 100 / cloud_info.loc[:,'Total_Samples']
@@ -476,7 +476,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
             
             else:
                 detection_info.loc[0,'False_Positive'] += 1
-
     
     detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
 
@@ -491,5 +490,6 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
     performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
 
-    detection_info.to_csv('/AtlasDisk/user/pestana/Output/results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-    performance_info.to_csv('/AtlasDisk/user/pestana/Output/results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    detection_info.to_csv('results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    performance_info.to_csv('results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    
