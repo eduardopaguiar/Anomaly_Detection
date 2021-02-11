@@ -509,8 +509,16 @@ def Chessboard_online_merge_njit(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
                     ### ----------------------------------------------------------------------- ###
                     break
             if CC == 1:
-                break                 
-    return Box,BOX_miu,BOX_S,NB, deleted_rows
+                break        
+
+    if deleted_rows != 0:
+        Box_new = Box[:-deleted_rows]
+        BOX_miu_new = BOX_miu[:-deleted_rows]
+        BOX_S_new = BOX_S[:-deleted_rows]         
+        return Box_new,BOX_miu_new,BOX_S_new,NB
+    else:        
+        return Box,BOX_miu,BOX_S,NB
+
 
 def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     uspi1 = pi_calculator(Hypermean,'euclidean')
@@ -599,47 +607,35 @@ def ChessBoard_online_projection_njit(BOX_miu,BOXMT,NB,interval1,interval2):
 
 def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
     
-    execution_time = open('execution_time_main_SODA.csv', 'a+')
     if Mode == 'Offline':
         data = Input['StaticData']
         L, W = data.shape
         N = Input['GridSize']
         distancetype = Input['DistanceType']
 
-        start = datetime.now()
+        print("--- grid_set ---")
+        print(datetime.now())
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('grid_set, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        start = datetime.now()
+        print("--- Globaldensity_Calculator ---")
+        print(datetime.now())
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('Globaldensity_Calculator, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        start = datetime.now()
+        print("--- chessboard_division ---")
+        print(datetime.now())
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         BOX = np.asarray(BOX)
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('chessboard_division_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        start = datetime.now()
+        print("--- ChessBoard_PeakIdentification ---")
+        print(datetime.now())
         Center,ModeNumber = ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('ChessBoard_PeakIdentification, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        
-        start = datetime.now()
+        print("--- cloud_member_recruitment ---")
+        print(datetime.now())
         Center_numba = List(Center)
         Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
@@ -669,68 +665,34 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L2, _ = Data2.shape
         
         for k in range(L2):
-            start = datetime.now()
+            if k % 10000 == 0:
+                print("--- for loop ---")
+                print("k  = {:10d}\n L2 = {:10d}".format(k,L2))
+                print(datetime.now())
             XM, AvM, AvA = data_standardization(Data2[k,:], XM, AvM, AvA, k+L1)
-            end = datetime.now()
-            if end != start:
-                execution_time.write('data_standardization, {}, {}, {}\n' .format(Mode, N, end - start ))
 
             interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
 
-            var = {'Data2[k,:]':Data2[k,:], 
-                    'BOX':BOX, 
-                    'BOX_miu':BOX_miu, 
-                    'BOX_S':BOX_S, 
-                    'NB':NB,
-                    'interval1':interval1,
-                    'interval2':interval2}
-            pickle.dump(var, open('var1.pickle', 'wb'))
-            start = datetime.now()
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
             BOX = np.asarray(BOX)
             BOX_miu = np.asarray(BOX_miu)
             BOX_S = np.asarray(BOX_S)
-            end = datetime.now()
-            if end != start:
-                execution_time.write('Chessboard_online_division_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
             
-            #var = { 'BOX':BOX, 
-            #        'BOX_miu':BOX_miu, 
-            #        'BOX_S':BOX_S, 
-            #        'NB':NB,
-            #        'interval1':interval1,
-            #        'interval2':interval2}
-            #pickle.dump(var, open('var2.pickle', 'wb'))
-            start = datetime.now()
-            #BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_std(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
-            BOX,BOX_miu,BOX_S,NB, deleted_rows = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
-            if deleted_rows != 0:
-                BOX = BOX[:-deleted_rows]
-                BOX_miu = BOX_miu[:-deleted_rows]
-                BOX_S = BOX_S[:-deleted_rows]
-            end = datetime.now()
-            if end != start:
-                execution_time.write('Chessboard_online_merge_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
-        
-        start = datetime.now()
+            BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
+
+        print("--- Chessboard_globaldensity ---")
+        print(datetime.now())
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('Chessboard_globaldensity, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        start = datetime.now()
+        print("--- ChessBoard_online_projection ---")
+        print(datetime.now())
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('ChessBoard_online_projection_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
 
-        start = datetime.now()
+        print("--- cloud_member_recruitment ---")
+        print(datetime.now())
         Center_numba = List(Center)
         Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
-        end = datetime.now()
-        if end != start:
-            execution_time.write('cloud_member_recruitment_njit, {}, {}, {}\n' .format(Mode, N, end - start ))
         
         
         Boxparameter['BOX']=BOX
@@ -742,7 +704,6 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         Boxparameter['AvA']=AvA
         
 
-    execution_time.close()
     Output = {'C': Center,
               'IDX': IDX,
               'SystemParams': Boxparameter,
