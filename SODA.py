@@ -6,7 +6,6 @@ from datetime import datetime
 from numba import njit,jit
 from numba.typed import List
 import numba as nb
-import cupy as cp
 import multiprocessing as mp
 import pickle
 
@@ -249,85 +248,18 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
     ret_B = np.array(B).reshape(-1,1)
     return Members,MemberNumber,Membership,ret_B 
 
-def cloud_member_recruitment_std(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
-    L, W = Uniquesample.shape
-    Membership = np.zeros((L,ModelNumber))
-    Members = np.zeros((L,ModelNumber*W))
-    Count = []
-
-
-
-    if distancetype == 'minkowski':
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype, p=1.5)/grid_trad
-    else:
-        distance1 = cdist(Uniquesample,Center_samples, metric=distancetype)/grid_trad
-
-    distance2 = np.sqrt(cdist(Uniquesample, Center_samples, metric='cosine'))/grid_angl
-
-    distance3 = distance1 + distance2
-    B = distance3.argmin(1)
-    for i in range(ModelNumber):
-        seq = []
-        for j,b in enumerate(B):
-            if b == i:
-                seq.append(j)
-        Count.append(len(seq))
-        Membership[:Count[i]:,i] = seq
-        Members[:Count[i]:,W*i:W*(i+1)] = [Uniquesample[j] for j in seq]
-    MemberNumber = Count
-    return Members,MemberNumber,Membership,B 
-
-def data_standardization(data,X_global,mean_global,mean_global2,k):
+@njit
+def data_standardization_njit(data,X_global,mean_global,mean_global2,k):
     mean_global_new = k/(k+1)*mean_global+data/(k+1)
     X_global_new = k/(k+1)*X_global+np.sum(np.power(data,2))/(k+1)
     mean_global2_new = k/(k+1)*mean_global2+data/(k+1)/np.sqrt(np.sum(np.power(data,2)))
     return X_global_new, mean_global_new, mean_global2_new
-
-def Chessboard_online_division_std(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
-    distance = np.zeros((NB,2))
-    COUNT = 0
-    SQ = []
-
-    for i in range(NB):
-
-
-        distance[i,0] = pdist([list(BOX_miu[i]), data.tolist()[0]],'euclidean')
-
-        distance[i,1] = np.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
-        
-        if distance[i,0] < intervel1 and distance[i,1] < intervel2:
-            COUNT += 1
-            SQ.append(i)
-
-    if COUNT == 0:
-        Box_new = np.concatenate((Box, np.array(data)))
-        NB_new = NB+1
-        BOX_S_new = np.concatenate((BOX_S, np.array([1])))
-        #BOX_S_new = np.array(BOX_S)
-        BOX_miu_new = np.concatenate((BOX_miu, np.array(data)))
-    if COUNT>=1:
-        DIS = np.zeros((COUNT,1))
-        for j in range(COUNT):
-            DIS[j] = distance[SQ[j],0] + distance[SQ[j],1]
-        a = np.amin(DIS)
-        b = int(np.where(DIS == a)[0])
-        Box_new = Box
-        NB_new = NB
-        BOX_S_new = np.array(BOX_S)
-        BOX_miu_new = np.array(BOX_miu)
-        BOX_S_new[SQ[b]] = BOX_S[SQ[b]] + 1
-        BOX_miu_new[SQ[b]] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b]]+data/BOX_S_new[SQ[b]]
-    
-            
-    
-    return Box_new,BOX_miu_new,BOX_S_new,NB_new
 
 @njit
 def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     distance = np.zeros((NB,2))
     COUNT = 0
     SQ = []
-    
     
     W, = BOX_miu[0].shape
     for i in range(NB):
@@ -363,69 +295,52 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
             SQ.append(i)
 
             
-    Box_new = List(Box)
-    BOX_S_new = List(BOX_S)
-    BOX_miu_new = List(BOX_miu)
-    
+    #Box_new = List(Box)
+    #BOX_S_new = List(BOX_S)
+    #BOX_miu_new = List(BOX_miu)
+    L, W = Box.shape
     if COUNT == 0:
-        Box_new.append(List(data)[0])
+        Box_new = np.zeros((L+1, W))
+        BOX_miu_new = np.zeros((L+1, W))
+        BOX_S_new = np.zeros((L+1), dtype=np.int32)
+        for ii in range(L):
+            BOX_S_new[ii] = BOX_S[ii]
+            for jj in range(W):
+                Box_new[ii,jj] = Box[ii,jj]
+                BOX_miu_new[ii,jj] = BOX_miu[ii,jj]
+        for jj in range(W):
+            Box_new[L,jj] = data[0, jj]
+            BOX_miu_new[L,jj] = data[0, jj]
+        
+        BOX_S_new[L] = 1
         NB_new = NB+1
-        BOX_S_new.append(1)
-        BOX_miu_new.append(List(data)[0])
+
         
     if COUNT>=1:
+        Box_new = Box
+        BOX_S_new = BOX_S
+        BOX_miu_new = BOX_miu
+        NB_new = NB
+        
         DIS = np.zeros((COUNT,1))
         for j in range(COUNT):
             DIS[j] = distance[SQ[j],0] + distance[SQ[j],1]
         
         mini = DIS[0]
+        b = 0
         for ii in range(1,len(DIS)):
             if DIS[ii] < mini:
                 mini = DIS[ii]
                 b = ii
-
         
-        NB_new = NB
+        
         BOX_S_new[SQ[b]] = BOX_S[SQ[b]] + 1
+        
         for i in range(W):
-            BOX_miu_new[SQ[b]][i] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b]][i]+data[0,i]/BOX_S_new[SQ[b]]
+            BOX_miu_new[SQ[b], i] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b], i]+data[0,i]/BOX_S_new[SQ[b]]
     
-    
-    #Box_new = np.asarray(Box_new)
-    #BOX_miu_new = np.asarray(BOX_miu_new)
-    #BOX_S_new = np.asarray(BOX_S_new)
+      
     return Box_new,BOX_miu_new,BOX_S_new,NB_new
-
-def Chessboard_online_merge_std(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
-    threshold1=intervel1/2
-    threshold2=intervel2/2
-    NB1=0
-    
-    while NB1 != NB:
-        CC = 0
-        NB1 = NB
-        for ii in range(NB):
-            seq1 = [i for i in range(NB) if i != ii]
-
-            distance1 = cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'euclidean')
-
-            distance2 = np.sqrt(cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
-
-            for jj in range(NB-1):
-                if distance1[0,jj] < threshold1 and distance2[0,jj] < threshold2:
-                    CC = 1
-                    NB -= 1
-                    Box = np.delete(Box, (ii), axis=0)
-                    BOX_miu[seq1[jj]] = BOX_miu[seq1[jj]]*BOX_S[seq1[jj]]/(BOX_S[seq1[jj]]+BOX_S[ii])+BOX_miu[ii]*BOX_S[ii]/(BOX_S[seq1[jj]]+BOX_S[ii])
-                    
-                    BOX_S[seq1[jj]] = BOX_S[seq1[jj]] + BOX_S[ii]
-                    BOX_miu = np.delete(BOX_miu, (ii), axis=0)
-                    BOX_S = np.delete(BOX_S, (ii), axis=0)
-                    
-                    break
-            if CC == 1:
-                break                 
-    return Box,BOX_miu,BOX_S,NB
 
 @njit
 def Chessboard_online_merge_njit(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
@@ -519,7 +434,6 @@ def Chessboard_online_merge_njit(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
     else:        
         return Box,BOX_miu,BOX_S,NB
 
-
 def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     uspi1 = pi_calculator(Hypermean,'euclidean')
     sum_uspi1 = np.sum(uspi1)
@@ -529,30 +443,6 @@ def Chessboard_globaldensity(Hypermean,HyperSupport,NH):
     Density_2 = uspi1/sum_uspi2
     Hyper_GD = (Density_2 + Density_1)*HyperSupport
     return Hyper_GD
-
-def ChessBoard_online_projection_std(BOX_miu,BOXMT,NB,interval1,interval2):
-    Centers = []
-    ModeNumber = 0
-    n = 2
-    
-    for ii in range(NB):
-        Reference = BOX_miu[ii]
-        distance1 = np.zeros((NB,1))
-        distance2 = np.zeros((NB,1))
-        for i in range(NB):
-            distance1[i] = pdist([list(Reference), list(BOX_miu[i])], 'euclidean')
-
-            distance2[i] = np.sqrt(pdist([list(Reference), list(BOX_miu[i])], 'cosine'))
-            
-        
-        Chessblocak_typicality = []
-        for i in range(NB):
-            if distance1[i]<n*interval1 and distance2[i]<n*interval2:
-                Chessblocak_typicality.append(BOXMT[i])
-        if max(Chessblocak_typicality) == BOXMT[ii]:
-            Centers.append(Reference)
-            ModeNumber += 1
-    return Centers,ModeNumber
 
 @njit
 def ChessBoard_online_projection_njit(BOX_miu,BOXMT,NB,interval1,interval2):
@@ -613,27 +503,17 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         N = Input['GridSize']
         distancetype = Input['DistanceType']
 
-        print("--- grid_set ---")
-        print(datetime.now())
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
 
-        print("--- Globaldensity_Calculator ---")
-        print(datetime.now())
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
 
-        print("--- chessboard_division ---")
-        print(datetime.now())
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         BOX = np.asarray(BOX)
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
 
-        print("--- ChessBoard_PeakIdentification ---")
-        print(datetime.now())
         Center,ModeNumber = ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
 
-        print("--- cloud_member_recruitment ---")
-        print(datetime.now())
         Center_numba = List(Center)
         Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
         
@@ -663,34 +543,22 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         NB = Boxparameter ['NB']
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
-        
+
+        pickle.dump(Input, open("var1.pkl", "wb"))
         for k in range(L2):
-            if k % 10000 == 0:
-                print("--- for loop ---")
-                print("k  = {:10d}\n L2 = {:10d}".format(k,L2))
-                print(datetime.now())
-            XM, AvM, AvA = data_standardization(Data2[k,:], XM, AvM, AvA, k+L1)
+            XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
             interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
 
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
-            BOX = np.asarray(BOX)
-            BOX_miu = np.asarray(BOX_miu)
-            BOX_S = np.asarray(BOX_S)
             
             BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
-        print("--- Chessboard_globaldensity ---")
-        print(datetime.now())
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
 
-        print("--- ChessBoard_online_projection ---")
-        print(datetime.now())
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
 
-        print("--- cloud_member_recruitment ---")
-        print(datetime.now())
         Center_numba = List(Center)
         Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         
