@@ -544,7 +544,6 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
 
-        pickle.dump(Input, open("var1.pkl", "wb"))
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
