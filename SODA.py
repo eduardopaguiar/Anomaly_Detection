@@ -6,7 +6,6 @@ from datetime import datetime
 from numba import njit,jit
 from numba.typed import List
 import numba as nb
-import cupy as cp
 import multiprocessing as mp
 import pickle
 
