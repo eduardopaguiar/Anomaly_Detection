@@ -599,7 +599,7 @@ def ChessBoard_online_projection_njit(BOX_miu,BOXMT,NB,interval1,interval2):
 
 def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
     
-    execution_time = open('execution_time_main_SODA.csv', 'a+')
+    execution_time = open('/AtlasDisk/user/pestana/Output/.csv', 'a+')
     if Mode == 'Offline':
         data = Input['StaticData']
         L, W = data.shape
