@@ -59,7 +59,7 @@ def main():
     print('         ==== Commencing Initiation ====\n')
 
     ### Background    
-    b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
+    b_name='/AtlasDisk/user/pestana/Input/Reduced_Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
@@ -67,7 +67,7 @@ def main():
     print("     .Background Loaded...")
 
     ### Signal
-    s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
+    s_name='/AtlasDisk/user/pestana/Input/Reduced_Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
