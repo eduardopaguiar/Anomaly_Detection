@@ -103,8 +103,8 @@ def main():
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
     
-        np.savetxt('Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
-        np.savetxt('Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
+        np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
+        np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
     
         # Concatenating Signal and the Test Background sub-set
 
