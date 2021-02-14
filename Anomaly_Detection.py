@@ -40,10 +40,10 @@ def main():
     gra_list = [i for i in range(1,31)] 
 
     # Number of iteration
-    iterations = 1
+    iterations = 3
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 1
+    PROCESSES = 2
 
     # Number of Data-set divisions
     windows = 100
@@ -143,11 +143,11 @@ def main():
 
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
-        
+        '''
         for gra in gra_list:
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
-        
-    '''
+        '''
+
         print('         .Creating pool with %d processes:' % PROCESSES)
     
         with multiprocessing.Pool(PROCESSES) as pool:
@@ -156,7 +156,7 @@ def main():
     
             print('             .Executing SODA for granularities', gra_list)
 
-            pool.map(calculatestar, TASKS)'''
+            pool.map(calculatestar, TASKS)
             
     print('\n        ====Data Processing Complete====\n')
     print('=*='*17)

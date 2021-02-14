@@ -95,7 +95,7 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
     BOX_S = [1]*W
     BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
     NB = W
-    BOXMT = [MMtypicality[k] for k in range(W)]
+    BOXMT = List([MMtypicality[k] for k in range(W)])
 
     for i in range(W,L):
         XA = Uniquesample[i].reshape(1,-1)
@@ -169,6 +169,55 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
     
     distance2 = np.sqrt(squareform(pdist(BOX_miu,metric='cosine')))
 
+    for i in range(NB):
+        seq = []
+        for j,(d1,d2) in enumerate(zip(distance1[i],distance2[i])):
+            if d1 < n*Internval1 and d2 < n*Internval2:
+                seq.append(j)
+        Chessblocak_typicality = [BOXMT[j] for j in seq]
+        if max(Chessblocak_typicality) == BOXMT[i]:
+            Centers.append(BOX_miu[i])
+            ModeNumber = ModeNumber + 1
+    return Centers, ModeNumber
+
+@njit
+def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
+    Centers = []
+    n = 2
+    ModeNumber = 0
+    L, W = BOX_miu.shape
+    
+    distance1 = np.zeros((L,L))
+    distance2 = np.zeros((L,L))
+    
+    
+    for i in range(L):
+        for j in range(i+1,L):
+            aux = 0
+            
+            num = 0
+            den1 = 0
+            den2 = 0
+            
+            for k in range(W):
+                aux += (BOX_miu[i,k] - BOX_miu[j,k])**2
+                
+                num += BOX_miu[i,k]*BOX_miu[j,k]
+                den1 += BOX_miu[i,k]**2
+                den2 += BOX_miu[j,k]**2
+            
+            distance1[i,j] = aux**.5
+            distance1[j,i] = aux**.5
+            
+            dis2 = (1 - num/(den1**.5 * den2**.5) )
+            if dis2 < 0:
+                distance2[i,j] = 0
+                distance2[j,i] = 0
+            else:
+                distance2[i,j] = dis2**.5
+                distance2[j,i] = dis2**.5
+
+    
     for i in range(NB):
         seq = []
         for j,(d1,d2) in enumerate(zip(distance1[i],distance2[i])):
@@ -512,7 +561,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
 
-        Center,ModeNumber = ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
+        Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
 
         Center_numba = List(Center)
         Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
@@ -544,6 +593,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
 
+        print(datetime.now())
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
