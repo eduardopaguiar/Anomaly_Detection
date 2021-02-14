@@ -123,9 +123,14 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
                     dot += (XB[j][k]*XA[ii,k])
                     denom_a += (XB[j][k] * XB[j][k])
                     denom_b += (XA[ii,k] * XA[ii,k])
-
-                aux1.append((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)
+                
+                d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))
+                if d2 < 0:
+                    aux1.append(0)
+                else:
+                    aux1.append(d2**0.5)
             b.append(aux1)
+
         distance = np.array([a[0],b[0]]).T
         
         SQ = []
@@ -261,7 +266,11 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
                 denom_a += (Center_samples[j][k] * Center_samples[j][k])
                 denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k])
 
-            aux1.append(((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)/grid_angl)
+            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))
+            if d2 < 0:
+                aux1.append(0)
+            else:
+                aux1.append((d2**0.5)/grid_angl)
         distance2.append(aux1)
     
     distance3 = []
@@ -562,9 +571,16 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         BOX_S = np.asarray(BOX_S)
 
         Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
-
+        
+        var = {'ModeNumber': ModeNumber,
+                'Center_numba': Center,
+                'data': data,
+                'grid_trad': grid_trad,
+                'grid_angl': grid_angl,
+                'distancetype': distancetype}
+        pickle.dump(var,open('var.pkl', 'wb'))
         Center_numba = List(Center)
-        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
+        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
