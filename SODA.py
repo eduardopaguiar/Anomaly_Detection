@@ -327,7 +327,7 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
         BOX_miu_new = np.zeros((L+1, W))
         BOX_S_new = np.zeros((L+1), dtype=np.int32)
         for ii in range(L):
-            BOX_S_new[ii] = BOX_S[ii]
+            BOX_S_new[ii] = np.int32(BOX_S[ii])
             for jj in range(W):
                 Box_new[ii,jj] = Box[ii,jj]
                 BOX_miu_new[ii,jj] = BOX_miu[ii,jj]
@@ -335,7 +335,7 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
             Box_new[L,jj] = data[0, jj]
             BOX_miu_new[L,jj] = data[0, jj]
         
-        BOX_S_new[L] = 1
+        BOX_S_new[L] = np.int32(1)
         NB_new = NB+1
 
     if COUNT>=1:
@@ -356,7 +356,7 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
                 b = ii
         
         
-        BOX_S_new[SQ[b]] = BOX_S[SQ[b]] + np.int32(1)
+        BOX_S_new[SQ[b]] += np.int32(1)
         
         for i in range(W):
             BOX_miu_new[SQ[b], i] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b], i]+data[0,i]/BOX_S_new[SQ[b]]
@@ -550,7 +550,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
             
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
-              
+
             BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)

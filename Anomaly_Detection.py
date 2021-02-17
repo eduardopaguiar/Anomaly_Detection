@@ -37,7 +37,7 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [i for i in range(1,31)] 
+    gra_list = [1] + [i for i in range(14,31)] 
 
     # Number of iteration
     iterations = 3
