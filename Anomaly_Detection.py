@@ -62,17 +62,14 @@ def main():
     b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
-    background = background[1:,:]
-    
-    background = dm.divide(background, 100, 100000)
+    background = background[1:100001,:]
     print("     .Background Loaded...")
 
     ### Signal
     s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    signal = signal[1:,:]
-    signal = dm.divide(signal, 100, 100000)
+    signal = signal[1:100001,:]
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
