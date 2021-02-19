@@ -63,7 +63,8 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-
+    
+    background = dm.divide(background, 100, 100000)
     print("     .Background Loaded...")
 
     ### Signal
@@ -71,7 +72,7 @@ def main():
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
-
+    signal = dm.divide(signal, 100, 100000)
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
