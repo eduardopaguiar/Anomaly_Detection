@@ -69,7 +69,6 @@ def main():
     s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    signal = train_test_split(signal, test_size=0.2)
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
