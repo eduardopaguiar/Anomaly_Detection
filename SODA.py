@@ -235,9 +235,11 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
                 denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k]) # Cosine
 
             d1 = (bux1**(0.5))/grid_trad # Euclidean
-            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))/grid_angl # Cosine
+            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) # Cosine
             if d2 < 0:
                 d2 = 0
+            else:
+                d2 = d2**0.5/grid_angl
             dist3.append(d1 + d2)
         
         mini = dist3[0]
