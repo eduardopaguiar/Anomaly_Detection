@@ -95,37 +95,36 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
     BOX_S = [1]*W
     BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
     NB = W
-    BOXMT = [MMtypicality[k] for k in range(W)]
+    BOXMT = List([MMtypicality[k] for k in range(W)])
 
     for i in range(W,L):
         XA = Uniquesample[i].reshape(1,-1)
         XB = BOX_miu
-        a = []
+        a = [] # Euclidean
+        b = [] # Cosine
         for ii in range (len(XA)):
-            aux2 = []
+            aux2 = [] # Euclidean
+            aux3 = [] # Cosine
             for j in range (len(XB)):
-                aux1 = []
-                bux1 = 0 
-                for e1, e2 in zip(XB[j],XA[ii,:]):
-                    aux1.append((e1-e2)**2)
-                    bux1 += ((e1-e2)**2)
-                aux2.append(bux1**(0.5))
-            a.append(aux2)
-            
-        b = []
-        for ii in range(len(XA)):
-            aux1 = []
-            for j in range(len(XB)):
-                dot = 0
-                denom_a = 0
-                denom_b = 0
+                aux1 = [] # Euclidean
+                bux1 = 0 # Euclidean
+                dot = 0 # Cosine
+                denom_a = 0 # Cosine
+                denom_b = 0 # Cosine
                 for k in range (len(XB[j])):
-                    dot += (XB[j][k]*XA[ii,k])
-                    denom_a += (XB[j][k] * XB[j][k])
-                    denom_b += (XA[ii,k] * XA[ii,k])
-
-                aux1.append((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)
-            b.append(aux1)
+                    aux1.append((XB[j][k]-XA[ii,k])**2) # Euclidean
+                    bux1 += ((XB[j][k]-XA[ii,k])**2) # Euclidean
+                    dot += (XB[j][k]*XA[ii,k]) # Cosine
+                    denom_a += (XB[j][k] * XB[j][k]) # Cosine
+                    denom_b += (XA[ii,k] * XA[ii,k]) # Cosine
+                aux2.append(bux1**(0.5)) # Euclidean
+                d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) # Cosine
+                if d2 < 0:
+                    aux3.append(0) # Cosine
+                else:
+                    aux3.append(d2**0.5) # Cosine
+            b.append(aux3) # Cosine
+            a.append(aux2) # Euclidean
         distance = np.array([a[0],b[0]]).T
         
         SQ = []
@@ -181,58 +180,80 @@ def ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,Internval1,Internval2, distan
     return Centers, ModeNumber
 
 @njit
+def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
+    Centers = []
+    n = 2
+    ModeNumber = 0
+    L, W = BOX_miu.shape
+    
+    for i in range(L):
+        distance1 = np.zeros((L)) # Euclidean
+        distance2 = np.zeros((L)) # Cosine
+        for j in range(L):
+            aux = 0 # Euclidean
+            num = 0 # Cosine
+            den1 = 0 # Cosine
+            den2 = 0 # Cosine
+            for k in range(W):
+                aux += (BOX_miu[i,k] - BOX_miu[j,k])**2 # Euclidean
+                num += BOX_miu[i,k]*BOX_miu[j,k] # Cosine
+                den1 += BOX_miu[i,k]**2 # Cosine
+                den2 += BOX_miu[j,k]**2 # Cosine
+            distance1[j] = aux**.5 # Euclidean
+            dis2 = (1 - num/(den1**.5 * den2**.5) ) # Cosine
+            if dis2 < 0:
+                distance2[j] = 0 # Cosine
+            else:
+                distance2[j] = dis2**.5 # Cosine
+
+        seq = []
+        for j,(d1,d2) in enumerate(zip(distance1,distance2)):
+            if d1 < n*Internval1 and d2 < n*Internval2:
+                seq.append(j)
+        Chessblocak_typicality = [BOXMT[j] for j in seq]
+        if max(Chessblocak_typicality) == BOXMT[i]:
+            Centers.append(BOX_miu[i])
+            ModeNumber = ModeNumber + 1
+    return Centers, ModeNumber
+
+@njit
 def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     L, W = Uniquesample.shape
+    
+    B = []
+    for ii in range(L):
+        dist3 = []
+        for j in range (len(Center_samples)):
+            bux1 = 0 # Euclidean
+            dot = 0 # Cosine
+            denom_a = 0 # Cosine
+            denom_b = 0 # Cosine
+            for k in range(W):
+                bux1 += ((Center_samples[j][k]-Uniquesample[ii,k])**2) # Euclidean
+                dot += (Center_samples[j][k]*Uniquesample[ii,k]) # Cosine
+                denom_a += (Center_samples[j][k] * Center_samples[j][k]) # Cosine
+                denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k]) # Cosine
+
+            d1 = (bux1**(0.5))/grid_trad # Euclidean
+            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) # Cosine
+            if d2 < 0:
+                d2 = 0
+            else:
+                d2 = d2**0.5/grid_angl
+            dist3.append(d1 + d2)
+        
+        mini = dist3[0]
+        mini_idx = 0
+        for jj in range(1, len(dist3)):
+            if dist3[jj] < mini:
+                mini = dist3[jj]
+                mini_idx = jj
+        B.append(mini_idx)
+    
+    '''
     Membership = np.zeros((L,ModelNumber))
     Members = np.zeros((L,ModelNumber*W))
     Count = []
-    
-    distance1 = []
-    for ii in range(L):
-        aux2 = []
-        for j in range (len(Center_samples)):
-            aux1 = []
-            bux1 = 0 
-            for k in range(W):
-                aux1.append((Center_samples[j][k]-Uniquesample[ii,k])**2)
-                bux1 += ((Center_samples[j][k]-Uniquesample[ii,k])**2)
-            aux2.append((bux1**(0.5))/grid_trad)
-        distance1.append(aux2)
-
-    
-    distance2 = []
-    for ii in range(L):
-        aux1 = []
-        for j in range(len(Center_samples)):
-            dot = 0
-            denom_a = 0
-            denom_b = 0
-            for k in range (len(Center_samples[j])):
-                dot += (Center_samples[j][k]*Uniquesample[ii,k])
-                denom_a += (Center_samples[j][k] * Center_samples[j][k])
-                denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k])
-
-            aux1.append(((1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))**0.5)/grid_angl)
-        distance2.append(aux1)
-    
-    distance3 = []
-    for i in range(len(distance1)):
-        aux = []
-        for j in range(len(distance1[0])):
-            aux.append(distance1[i][j] + distance2[i][j])
-        distance3.append(aux)
-    
-    
-    B = []
-    for dist3 in distance3:
-        mini = dist3[0]
-        mini_idx = 0
-        for ii in range(1, len(dist3)):
-            if dist3[ii] < mini:
-                mini = dist3[ii]
-                mini_idx = ii
-        B.append(mini_idx)
-    
     for i in range(ModelNumber):
         seq = []
         for j,b in enumerate(B):
@@ -243,10 +264,13 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
             Membership[ii,i] = j
             for k in range(W):
                 Members[ii,W*i+k] = Uniquesample[j,k]
-    
+
     MemberNumber = Count
     ret_B = np.array(B).reshape(-1,1)
-    return Members,MemberNumber,Membership,ret_B 
+    return Members,MemberNumber,Membership,ret_B '''
+    
+    ret_B = np.array(B).reshape(-1,1)
+    return ret_B  
 
 @njit
 def data_standardization_njit(data,X_global,mean_global,mean_global2,k):
@@ -262,49 +286,36 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
     SQ = []
     
     W, = BOX_miu[0].shape
-    for i in range(NB):
-        # pdist euclidean
-        # distance[i,0] = pdist([list(BOX_miu[i]), data.tolist()[0]],'euclidean')
-            
-        aux = 0
+    for i in range(NB):     
+        aux = 0 # Euclidean
+        num = 0 # Cosine
+        den1 = 0 # Cosine
+        den2 = 0 # Cosine
         for iii in range(W):
-            aux += (BOX_miu[i, iii] - data[0, iii])**2 
+            aux += (BOX_miu[i, iii] - data[0, iii])**2 # Euclidean 
+            num += BOX_miu[i,iii]*data[0, iii] # Cosine
+            den1 += BOX_miu[i,iii]**2 # Cosine
+            den2 += data[0, iii]**2 # Cosine
                 
-        distance[i,0] = aux**.5
-                
-        # pdist cosine
-        # distance[i,1] = np.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
-            
-        num = 0
-        den1 = 0
-        den2 = 0
-        for iii in range(W):
-            num += BOX_miu[i,iii]*data[0, iii]
-            den1 += BOX_miu[i,iii]**2
-            den2 += data[0, iii]**2
-            
-        d2 = (1 - num/(den1**.5 * den2**.5) )
+        distance[i,0] = aux**.5 # Euclidean
+        d2 = (1 - num/(den1**.5 * den2**.5) ) # Cosine
         if d2 < 0:
-            distance[i,1] = 0
+            distance[i,1] = 0 # Cosine
         else:
-            distance[i,1] = d2**.5
+            distance[i,1] = d2**.5 # Cosine
                 
         
         if distance[i,0] < intervel1 and distance[i,1] < intervel2:
             COUNT += 1
             SQ.append(i)
 
-            
-    #Box_new = List(Box)
-    #BOX_S_new = List(BOX_S)
-    #BOX_miu_new = List(BOX_miu)
     L, W = Box.shape
     if COUNT == 0:
         Box_new = np.zeros((L+1, W))
         BOX_miu_new = np.zeros((L+1, W))
-        BOX_S_new = np.zeros((L+1), dtype=np.int32)
+        BOX_S_new = np.zeros((L+1), dtype=np.int64)
         for ii in range(L):
-            BOX_S_new[ii] = BOX_S[ii]
+            BOX_S_new[ii] = np.int64(BOX_S[ii])
             for jj in range(W):
                 Box_new[ii,jj] = Box[ii,jj]
                 BOX_miu_new[ii,jj] = BOX_miu[ii,jj]
@@ -312,10 +323,9 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
             Box_new[L,jj] = data[0, jj]
             BOX_miu_new[L,jj] = data[0, jj]
         
-        BOX_S_new[L] = 1
+        BOX_S_new[L] = np.int64(1)
         NB_new = NB+1
 
-        
     if COUNT>=1:
         Box_new = Box
         BOX_S_new = BOX_S
@@ -334,7 +344,7 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
                 b = ii
         
         
-        BOX_S_new[SQ[b]] = BOX_S[SQ[b]] + 1
+        BOX_S_new[SQ[b]] += np.int64(1)
         
         for i in range(W):
             BOX_miu_new[SQ[b], i] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b], i]+data[0,i]/BOX_S_new[SQ[b]]
@@ -358,34 +368,25 @@ def Chessboard_online_merge_njit(Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
             seq1 = [i for i in range(NB) if i != ii]
             # distance1 = cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'euclidean')
             
-            distance1 = List()
+            distance1 = List() # Euclidean
+            distance2 = List() # Cosine
             for i in range(NB):
                 if i!= ii:
-                    aux = 0
+                    aux = 0 # Euclidean
+                    num = 0 # Cosine
+                    den1 = 0 # Cosine
+                    den2 = 0 # Cosine
                     for jj in range(W):
-                        aux += (BOX_miu[ii,jj] - BOX_miu[i,jj])**2
-                
-                    distance1.append(aux**.5)  
-                        
-                        
-            #distance2 = np.sqrt(cdist(BOX_miu[ii].reshape(1,-1), BOX_miu[seq1], 'cosine'))
-            
-            distance2 = List()
-            for i in range(NB):
-                if i!= ii:
-                    num = 0
-                    den1 = 0
-                    den2 = 0
-                    for jj in range(W):
-                        num += BOX_miu[ii,jj]*BOX_miu[i,jj]
-                        den1 += BOX_miu[ii,jj]**2
-                        den2 += BOX_miu[i,jj]**2
-                    
-                    d2 = (1 - num/(den1**.5 * den2**.5) )
+                        aux += (BOX_miu[ii,jj] - BOX_miu[i,jj])**2 # Euclidean
+                        num += BOX_miu[ii,jj]*BOX_miu[i,jj] # Cosine
+                        den1 += BOX_miu[ii,jj]**2 # Cosine
+                        den2 += BOX_miu[i,jj]**2 # Cosine
+                    distance1.append(aux**.5) # Euclidean  
+                    d2 = (1 - num/(den1**.5 * den2**.5) ) # Cosine
                     if d2 < 0:               
-                        distance2.append(d2**.5)  
+                        distance2.append(d2**.5) # Cosine  
                     else:
-                        distance2.append(0)
+                        distance2.append(0) # Cosine               
             
             for jj in range(NB-1):
                 if distance1[jj] < threshold1 and distance2[jj] < threshold2:
@@ -449,42 +450,27 @@ def ChessBoard_online_projection_njit(BOX_miu,BOXMT,NB,interval1,interval2):
     Centers = []
     ModeNumber = 0
     n = 2
-    
+    W, = BOX_miu[0].shape
     for ii in range(NB):
         Reference = BOX_miu[ii]
-        distance1 = np.zeros((NB,1))
-        distance2 = np.zeros((NB,1))
-        for i in range(NB):
-            
-            
-            # pdist euclidean
-            # distance1[i] = pdist(np.vstack((Reference, BOX_miu[i])), 'euclidean')
-            W, = Reference.shape
-            
-            aux = 0
+        distance1 = np.zeros((NB,1)) # Euclidean
+        distance2 = np.zeros((NB,1)) # Cosine
+        for i in range(NB):          
+            aux = 0 # Euclidean
+            num = 0 # Cosine
+            den1 = 0 # Cosine
+            den2 = 0 # Cosine
             for iii in range(W):
-                aux += (Reference[iii] - BOX_miu[i, iii])**2 
-                
-            distance1[i] = aux**.5
-                
-            # pdist cosine
-            # distance2[i] = np.sqrt(pdist(np.vstack((Reference, BOX_miu[i])), 'cosine'))
-            
-            
-            num = 0
-            den1 = 0
-            den2 = 0
-            for iii in range(W):
-                num += Reference[iii]*BOX_miu[i, iii]
-                den1 += Reference[iii]**2
-                den2 += BOX_miu[i, iii]**2
-            
-            d2 = (1 - num/(den1**.5 * den2**.5) )
+                aux += (Reference[iii] - BOX_miu[i, iii])**2 # Euclidean 
+                num += Reference[iii]*BOX_miu[i, iii] # Cosine
+                den1 += Reference[iii]**2 # Cosine
+                den2 += BOX_miu[i, iii]**2 # Cosine 
+            distance1[i] = aux**.5 # Euclidean
+            d2 = (1 - num/(den1**.5 * den2**.5) ) # Cosine
             if d2 < 0:
-                distance2[i] = 0
+                distance2[i] = 0 # Cosine
             else:
-                distance2[i] = d2**.5
-              
+                distance2[i] = d2**.5 # Cosine
         
         Chessblocak_typicality = []
         for i in range(NB):
@@ -502,20 +488,22 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L, W = data.shape
         N = Input['GridSize']
         distancetype = Input['DistanceType']
+        print(N, '-', datetime.now(), '     OFFLINE MODE')
 
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
-
+        
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
-
+        
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         BOX = np.asarray(BOX)
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
-
-        Center,ModeNumber = ChessBoard_PeakIdentification(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
-
+        
+        Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
+               
         Center_numba = List(Center)
-        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,grid_angl, distancetype)
+        #Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
+        IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
@@ -543,25 +531,30 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         NB = Boxparameter ['NB']
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
-
+        
+        print(N, '-', datetime.now(), '     EVOLVING MODE')
+          
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
             interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
-
-            BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
             
+            BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
+
             BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
+         
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
 
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
-
+  
         Center_numba = List(Center)
-        Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
+        #Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
+        IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         
-        
+
+        print('')
         Boxparameter['BOX']=BOX
         Boxparameter['BOX_miu']=BOX_miu
         Boxparameter['BOX_S']=BOX_S
