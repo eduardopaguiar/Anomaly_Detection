@@ -219,56 +219,39 @@ def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,Internval1,Internval2, d
 @njit
 def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_trad,grid_angl, distancetype):
     L, W = Uniquesample.shape
-    Membership = np.zeros((L,ModelNumber))
-    Members = np.zeros((L,ModelNumber*W))
-    Count = []
     
-    distance1 = [] # Euclidean
-    distance2 = [] # Cosine
+    B = []
     for ii in range(L):
-        aux2 = [] # Euclidean
-        aux3 = [] # Cosine
+        dist3 = []
         for j in range (len(Center_samples)):
-            aux1 = [] # Euclidean
             bux1 = 0 # Euclidean
             dot = 0 # Cosine
             denom_a = 0 # Cosine
             denom_b = 0 # Cosine
             for k in range(W):
-                aux1.append((Center_samples[j][k]-Uniquesample[ii,k])**2) # Euclidean
                 bux1 += ((Center_samples[j][k]-Uniquesample[ii,k])**2) # Euclidean
                 dot += (Center_samples[j][k]*Uniquesample[ii,k]) # Cosine
                 denom_a += (Center_samples[j][k] * Center_samples[j][k]) # Cosine
                 denom_b += (Uniquesample[ii,k] * Uniquesample[ii,k]) # Cosine
 
-            aux2.append((bux1**(0.5))/grid_trad) # Euclidean
-            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) # Cosine
+            d1 = (bux1**(0.5))/grid_trad # Euclidean
+            d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5)))))/grid_angl # Cosine
             if d2 < 0:
-                aux3.append(0) # Cosine
-            else:
-                aux3.append((d2**0.5)/grid_angl) # Cosine
-
-        distance1.append(aux2) # Euclidean
-        distance2.append(aux3) # Cosine
-    
-    distance3 = []
-    for i in range(len(distance1)):
-        aux = []
-        for j in range(len(distance1[0])):
-            aux.append(distance1[i][j] + distance2[i][j])
-        distance3.append(aux)
-    
-    
-    B = []
-    for dist3 in distance3:
+                d2 = 0
+            dist3.append(d1 + d2)
+        
         mini = dist3[0]
         mini_idx = 0
-        for ii in range(1, len(dist3)):
-            if dist3[ii] < mini:
-                mini = dist3[ii]
-                mini_idx = ii
+        for jj in range(1, len(dist3)):
+            if dist3[jj] < mini:
+                mini = dist3[jj]
+                mini_idx = jj
         B.append(mini_idx)
     
+    '''
+    Membership = np.zeros((L,ModelNumber))
+    Members = np.zeros((L,ModelNumber*W))
+    Count = []
     for i in range(ModelNumber):
         seq = []
         for j,b in enumerate(B):
@@ -279,10 +262,13 @@ def cloud_member_recruitment_njit(ModelNumber,Center_samples,Uniquesample,grid_t
             Membership[ii,i] = j
             for k in range(W):
                 Members[ii,W*i+k] = Uniquesample[j,k]
-    
+
     MemberNumber = Count
     ret_B = np.array(B).reshape(-1,1)
-    return Members,MemberNumber,Membership,ret_B 
+    return Members,MemberNumber,Membership,ret_B '''
+    
+    ret_B = np.array(B).reshape(-1,1)
+    return ret_B  
 
 @njit
 def data_standardization_njit(data,X_global,mean_global,mean_global2,k):
@@ -502,19 +488,29 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         distancetype = Input['DistanceType']
 
         print(N, '-', datetime.now())
+        print('     Entrando na Grid_set')
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
-
+        
+        print(N, '-', datetime.now())
+        print('     Entrando na Globaldensity_Calculator')
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
-
+        
+        print(N, '-', datetime.now())
+        print('     Entrando na chessboard_division_njit')
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         BOX = np.asarray(BOX)
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
-
+        
+        print(N, '-', datetime.now())
+        print('     Entrando na ChessBoard_PeakIdentification_njit')
         Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
         
+        print(N, '-', datetime.now())
+        print('     Entrando na cloud_member_recruitment_njit')        
         Center_numba = List(Center)
-        Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
+        #Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
+        IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
@@ -542,7 +538,9 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         NB = Boxparameter ['NB']
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
-
+        
+        print(N, '-', datetime.now())
+        print('     Entrando no for loop')   
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
@@ -553,14 +551,23 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
 
             BOX,BOX_miu,BOX_S,NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
+        
+        print(N, '-', datetime.now())
+        print('     Entrando na Chessboard_globaldensity')   
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
 
+        print(N, '-', datetime.now())
+        print('     Entrando na ChessBoard_online_projection_njit')   
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
 
+        print(N, '-', datetime.now())
+        print('     Entrando na cloud_member_recruitment_njit')   
         Center_numba = List(Center)
-        Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
+        #Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
+        IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         
-        
+
+        print('')
         Boxparameter['BOX']=BOX
         Boxparameter['BOX_miu']=BOX_miu
         Boxparameter['BOX_S']=BOX_S
