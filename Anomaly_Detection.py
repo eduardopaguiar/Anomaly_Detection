@@ -37,7 +37,7 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [1,14] 
+    gra_list = [1, 4, 8, 12, 14, 28] 
 
     # Number of iteration
     iterations = 33
@@ -62,14 +62,14 @@ def main():
     b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
-    background = background[1:100001,:]
+    background = train_test_split(background, test_size=0.2)
     print("     .Background Loaded...")
 
     ### Signal
     s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
-    signal = signal[1:100001,:]
+    signal = train_test_split(signal, test_size=0.2)
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
