@@ -37,7 +37,7 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [1,14] 
+    gra_list = [1, 4, 8, 14] 
 
     # Number of iteration
     iterations = 33
@@ -72,7 +72,7 @@ def main():
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
-    signal = dm.divide(signal, 100, 100000)
+
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
