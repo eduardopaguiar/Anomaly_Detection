@@ -62,6 +62,7 @@ def main():
     b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
+    background = background[1:,:]
     background = train_test_split(background, test_size=0.2)
     print("     .Background Loaded...")
 
@@ -69,6 +70,7 @@ def main():
     s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
+    signal = signal[1:,:]
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
