@@ -34,16 +34,16 @@ def main():
     ####### Variables set by user #######
 
     # PCA number of components
-    N_PCs = 8
+    N_PCs = 6
 
     # List of granularities 
-    gra_list = [1, 4, 8, 12, 14, 28] 
+    gra_list = [1,2,3,4] 
 
     # Number of iteration
-    iterations = 33
+    iterations = 2
 
     # Number of process to create in the multiprocessing step
-    #PROCESSES = 2
+    PROCESSES = 4
 
     # Number of Data-set divisions
     windows = 100
@@ -59,19 +59,20 @@ def main():
     print('         ==== Commencing Initiation ====\n')
 
     ### Background    
-    b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
+    #b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
+    b_name='Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 100000)
+    background, _ = dm.divide(background, 100, 700)
     print("     .Background Loaded...")
 
     ### Signal
-    s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
+    #s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
+    s_name='Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
-    signal, _ = dm.divide(signal, 100, 100000)
     print("     .Signal Loaded...")
 
     print('\n          ==== Initiation Complete ====\n')
@@ -114,15 +115,17 @@ def main():
 
         print('         .Normalizing Data')
         
-        norm_streaming_data = dm.Normalisation(streaming_data)
-        norm_background_train = dm.Normalisation(background_train)
+        #norm_streaming_data = dm.Normalisation(streaming_data)
+        #norm_background_train = dm.Normalisation(background_train)
 
         # Calculates Statistical attributes
 
         print('         .Calculating statistical attributes')
 
-        xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
-        xyz_background_train = dm.statistics_attributes(norm_background_train)
+        #xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
+        #xyz_background_train = dm.statistics_attributes(norm_background_train)
+        xyz_streaming_data = dm.statistics_attributes(streaming_data)
+        xyz_background_train = dm.statistics_attributes(background_train)
 
         # Normalize Features
 
@@ -136,13 +139,14 @@ def main():
         print('         .Calculating PCA:')
 
         proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
+        #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
 
         # Plots PCA results
 
         print('         .Ploting PCA results')
 
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
-
+        """
         for gra in gra_list:
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
         
@@ -156,7 +160,7 @@ def main():
             print('             .Executing SODA for granularities', gra_list)
 
             pool.map(calculatestar, TASKS)
-        """
+
         
     print('\n        ====Data Processing Complete====\n')
     print('=*='*17)
