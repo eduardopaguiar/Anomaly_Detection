@@ -286,65 +286,13 @@ def Chessboard_online_division_njit(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel
             COUNT += 1
             SQ.append(i)
 
-    L, W = Box.shape
-    if COUNT == 0:
-        Box_new = np.zeros((L+1, W))
-        BOX_miu_new = np.zeros((L+1, W))
-        BOX_S_new = np.zeros((L+1), dtype=np.int32)
-        for ii in range(L):
-            BOX_S_new[ii] = np.int32(BOX_S[ii])
-            for jj in range(W):
-                Box_new[ii,jj] = Box[ii,jj]
-                BOX_miu_new[ii,jj] = BOX_miu[ii,jj]
-        for jj in range(W):
-            Box_new[L,jj] = data[0, jj]
-            BOX_miu_new[L,jj] = data[0, jj]
-        
-        BOX_S_new[L] = np.int32(1)
-        NB_new = NB+1
+    return COUNT, SQ, distance
 
-    if COUNT>=1:
-        Box_new = Box
-        BOX_S_new = BOX_S
-        BOX_miu_new = BOX_miu
-        NB_new = NB
-        
-        DIS = np.zeros((COUNT,1))
-        for j in range(COUNT):
-            DIS[j] = distance[SQ[j],0] + distance[SQ[j],1]
-        
-        mini = DIS[0]
-        b = 0
-        for ii in range(1,len(DIS)):
-            if DIS[ii] < mini:
-                mini = DIS[ii]
-                b = ii
-        
-
-        BOX_S_new[SQ[b]] += np.int32(1)
-        
-        for i in range(W):
-            BOX_miu_new[SQ[b], i] = BOX_S[SQ[b]]/BOX_S_new[SQ[b]]*BOX_miu[SQ[b], i]+data[0,i]/BOX_S_new[SQ[b]]
-    
-      
-    return Box_new,BOX_miu_new,BOX_S_new,NB_new
-
-def Chessboard_online_division(data,Box,BOX_miu,BOX_S,NB,intervel1,intervel2):
-    distance = np.zeros((NB,2))
-    COUNT = 0
-    SQ = []
-    for i in range(NB):
-        distance[i,0] = pdist([list(BOX_miu[i]), data.tolist()[0]],'euclidean')
-        distance[i,1] = np.sqrt(pdist([list(BOX_miu[i]), data.tolist()[0]],'cosine'))
-        if distance[i,0] < intervel1 and distance[i,1] < intervel2:
-            COUNT += 1
-            SQ.append(i)
-            
+def Chessboard_online_division(COUNT, SQ, distance, data, Box,BOX_miu,BOX_S,NB):            
     if COUNT == 0:
         Box_new = np.concatenate((Box, np.array(data)))
         NB_new = NB+1
         BOX_S_new = np.concatenate((BOX_S, np.array([1])))
-        #BOX_S_new = np.array(BOX_S)
         BOX_miu_new = np.concatenate((BOX_miu, np.array(data)))
     if COUNT>=1:
         DIS = np.zeros((COUNT,1))
@@ -501,26 +449,27 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         N = Input['GridSize']
         distancetype = Input['DistanceType']
 
-        print('{:16d} -'.format(N), datetime.now(), '     Grid_set', file=open("log_file.txt", "a"))
+        print('{:16d} -'.format(N), datetime.now(), '     Grid_set', file=open("log_file.txt", "a+"))
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
         
-        print('{:16d} -'.format(N), datetime.now(), '     Globaldensity_Calculator', file=open("log_file.txt", "a"))
+        print('{:16d} -'.format(N), datetime.now(), '     Globaldensity_Calculator', file=open("log_file.txt", "a+"))
         GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
         
-        print('{:16d} -'.format(N), datetime.now(), '     chessboard_division_njit', file=open("log_file.txt", "a"))
+        print('{:16d} -'.format(N), datetime.now(), '     chessboard_division_njit', file=open("log_file.txt", "a+"))
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
         BOX = np.asarray(BOX)
         BOX_miu = np.asarray(BOX_miu)
         BOX_S = np.asarray(BOX_S)
 
-        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_PeakIdentification_njit', file=open("log_file.txt", "a"))
+        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_PeakIdentification_njit', file=open("log_file.txt", "a+"))
         Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
         
-        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a"))        
+        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a+"))        
         Center_numba = List(Center)
         #Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
         IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
-        
+           
+
         
         Boxparameter = {'BOX': BOX,
                 'BOX_miu': BOX_miu,
@@ -549,31 +498,30 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
         
-        print('{:16d} -'.format(N), datetime.now(), '     Loop', file=open("log_file.txt", "a"))   
+        print('{:16d} -'.format(N), datetime.now(), '     Loop', file=open("log_file.txt", "a+"))   
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
             interval1 = np.sqrt(2*(XM-np.sum(np.power(AvM,2))))/N
             interval2 = np.sqrt(1-np.sum(np.power(AvA,2)))/N
             
-            BOX, BOX_miu, BOX_S, NB = Chessboard_online_division(Data2[k,:], BOX, BOX_miu, BOX_S, NB, interval1, interval2)
-            #BOX, BOX_miu, BOX_S, NB = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
+            COUNT, SQ, distance = Chessboard_online_division_njit(np.array(Data2[k,:]), BOX, BOX_miu, BOX_S, NB, interval1, interval2)
+            BOX, BOX_miu, BOX_S, NB = Chessboard_online_division(COUNT, SQ, distance, Data2[k,:], BOX, BOX_miu, BOX_S, NB)
             
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
-
-        print('{:16d} -'.format(N), datetime.now(), '     Chessboard_globaldensity', file=open("log_file.txt", "a"))   
+        print('{:16d} -'.format(N), datetime.now(), '     Chessboard_globaldensity', file=open("log_file.txt", "a+"))   
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
 
-        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_online_projection_njit', file=open("log_file.txt", "a"))   
+        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_online_projection_njit', file=open("log_file.txt", "a+"))   
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
 
-        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a"))   
+        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a+"))   
         Center_numba = List(Center)
         #Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
                 
-        print('{:16d} -'.format(N), datetime.now(), '     ENCERRADO\n', file=open("log_file.txt", "a"))
+        print('{:16d} -'.format(N), datetime.now(), '     ENCERRADO\n', file=open("log_file.txt", "a+"))
         Boxparameter['BOX']=BOX
         Boxparameter['BOX_miu']=BOX_miu
         Boxparameter['BOX_S']=BOX_S
