@@ -248,7 +248,7 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     pca_variation = pca.explained_variance_ratio_ * 100
     
 
-    print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2))
+    print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2), file=open("log_file.txt", "a"))
 
     proj_background_train = pca.transform(background_train)
     proj_streaming_data = pca.transform(streaming_data)

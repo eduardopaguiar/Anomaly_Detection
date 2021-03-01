@@ -488,7 +488,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L, W = data.shape
         N = Input['GridSize']
         distancetype = Input['DistanceType']
-        print(N, '-', datetime.now(), '     OFFLINE MODE')
+        print(N, '-', datetime.now(), '     OFFLINE MODE', file=open("log_file.txt", "a"))
 
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
         
@@ -532,7 +532,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
         
-        print(N, '-', datetime.now(), '     EVOLVING MODE')
+        print(N, '-', datetime.now(), '     EVOLVING MODE', file=open("log_file.txt", "a"))
           
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
@@ -554,7 +554,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         
 
-        print('')
+        print('', file=open("log_file.txt", "a"))
         Boxparameter['BOX']=BOX
         Boxparameter['BOX_miu']=BOX_miu
         Boxparameter['BOX_S']=BOX_S

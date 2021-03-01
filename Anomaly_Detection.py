@@ -37,10 +37,10 @@ def main():
     N_PCs = 6
 
     # List of granularities 
-    gra_list = [1,2,3,4] 
+    gra_list = [6,10,14,16] 
 
     # Number of iteration
-    iterations = 2
+    iterations = 4
 
     # Number of process to create in the multiprocessing step
     PROCESSES = 4
@@ -56,7 +56,7 @@ def main():
 
     # Using multiprocess to load the data-sets into the code
 
-    print('         ==== Commencing Initiation ====\n')
+    print('         ==== Commencing Initiation ====\n', file=open("log_file.txt", "a"))
 
     ### Background    
     #b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
@@ -64,8 +64,8 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 700)
-    print("     .Background Loaded...")
+    background, _ = dm.divide(background, 100, 7000)
+    print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
     #s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
@@ -73,22 +73,22 @@ def main():
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
-    print("     .Signal Loaded...")
+    print("     .Signal Loaded...", file=open("log_file.txt", "a"))
 
-    print('\n          ==== Initiation Complete ====\n')
-    print('=*='*17)
+    print('\n          ==== Initiation Complete ====\n', file=open("log_file.txt", "a"))
+    print('=*='*17, file=open("log_file.txt", "a"))
 
-    print('      ==== Commencing Data Processing ====')
+    print('      ==== Commencing Data Processing ====', file=open("log_file.txt", "a"))
 
     for n_i in range(iterations):
 
-        print('\n     => Iteration Number', (n_i+1))
+        print('\n     => Iteration Number', (n_i+1), file=open("log_file.txt", "a"))
 
         # Devide data-set into training and testing sub-sets
 
-        print('         .Deviding training and testing sub-sets')
+        print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
 
-        background_train, background_test = train_test_split(background, test_size=0.40, random_state=42)
+        background_train, background_test = train_test_split(background, test_size=0.20, random_state=42)
 
         # Defining number of events Signal events on online phase.
 
@@ -96,9 +96,9 @@ def main():
 
         # Devide online signal
 
-        print('         .Selecting Signal on the following porpotion:')
-        print('             .' + str(background_percent) + '% Background samples')
-        print('             .' + str(100-background_percent) + '% Signal samples')
+        print('         .Selecting Signal on the following porpotion:', file=open("log_file.txt", "a"))
+        print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
+        print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
 
         reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
 
@@ -113,14 +113,14 @@ def main():
 
         # Normalize Data
 
-        print('         .Normalizing Data')
+        print('         .Normalizing Data', file=open("log_file.txt", "a"))
         
         #norm_streaming_data = dm.Normalisation(streaming_data)
         #norm_background_train = dm.Normalisation(background_train)
 
         # Calculates Statistical attributes
 
-        print('         .Calculating statistical attributes')
+        print('         .Calculating statistical attributes', file=open("log_file.txt", "a"))
 
         #xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
         #xyz_background_train = dm.statistics_attributes(norm_background_train)
@@ -129,21 +129,21 @@ def main():
 
         # Normalize Features
 
-        print('         .Normalizing Features')
+        print('         .Normalizing Features', file=open("log_file.txt", "a"))
 
         norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
         norm_xyz_background_train = dm.Normalisation(xyz_background_train)
 
         # Calculates PCA and projects the sub-sets 
 
-        print('         .Calculating PCA:')
+        print('         .Calculating PCA:', file=open("log_file.txt", "a"))
 
         proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
         #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
 
         # Plots PCA results
 
-        print('         .Ploting PCA results')
+        print('         .Ploting PCA results', file=open("log_file.txt", "a"))
 
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
         """
@@ -151,19 +151,22 @@ def main():
             dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
         
         """
-        print('         .Creating pool with %d processes:' % PROCESSES)
+        print('         .Running SODA on base granularity', file=open("log_file.txt", "a"))
+        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i)
+
+        print('         .Creating pool with %d processes:' % PROCESSES, file=open("log_file.txt", "a"))
     
         with multiprocessing.Pool(PROCESSES) as pool:
 
             TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)) for gra in gra_list]
     
-            print('             .Executing SODA for granularities', gra_list)
+            print('             .Executing SODA for granularities', gra_list, file=open("log_file.txt", "a"))
 
             pool.map(calculatestar, TASKS)
 
         
-    print('\n        ====Data Processing Complete====\n')
-    print('=*='*17)
+    print('\n        ====Data Processing Complete====\n', file=open("log_file.txt", "a"))
+    print('=*='*17, file=open("log_file.txt", "a"))
             
 
 if __name__ == '__main__':
