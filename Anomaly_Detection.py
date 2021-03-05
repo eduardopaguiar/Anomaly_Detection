@@ -37,13 +37,13 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [2,3,4,5] 
+    gra_list = [2,3,4] 
 
     # Number of iteration
     iterations = 4
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 4
+    PROCESSES = 3
 
     # Number of Data-set divisions
     windows = 100
@@ -64,7 +64,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 15000)
+    background, _ = dm.divide(background, 100, 100000)
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
