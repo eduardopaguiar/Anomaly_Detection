@@ -63,7 +63,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 15000)
+    background, _ = dm.divide(background, 100, 100000)
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
