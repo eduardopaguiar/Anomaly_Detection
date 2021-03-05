@@ -59,8 +59,7 @@ def main():
     print('         ==== Commencing Initiation ====\n', file=open("log_file.txt", "a"))
 
     ### Background    
-    #b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
-    b_name='Input_Background_1.csv'
+    b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
@@ -68,8 +67,7 @@ def main():
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
-    #s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
-    s_name='Input_Signal_1.csv'
+    s_name='/AtlasDisk/user/pestana/Input/Input_Signal_1.csv'
 
     signal = np.genfromtxt(s_name, delimiter=',')
     signal = signal[1:,:]
@@ -100,7 +98,7 @@ def main():
         print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
         print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
 
-        reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
+        reduced_signal, _ = dm.divide(signal, windows, signal_online_samples)
 
         # Nextly, the Signal data processed is saved in the Analised data directory.
     
@@ -119,8 +117,6 @@ def main():
 
         print('         .Calculating statistical attributes', file=open("log_file.txt", "a"))
 
-        #xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
-        #xyz_background_train = dm.statistics_attributes(norm_background_train)
         xyz_streaming_data = dm.statistics_attributes(streaming_data)
         xyz_background_train = dm.statistics_attributes(background_train)
 
@@ -128,16 +124,12 @@ def main():
 
         print('         .Normalizing Features', file=open("log_file.txt", "a"))
 
-        #norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
-        #norm_xyz_background_train = dm.Normalisation(xyz_background_train)
-
         norm_xyz_background_train,norm_xyz_streaming_data = dm.Normalisation(xyz_background_train,xyz_streaming_data)
 
         # Calculates PCA and projects the sub-sets 
 
         print('         .Calculating PCA:', file=open("log_file.txt", "a"))
 
-        #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
         proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
 
         # Plots PCA results
@@ -145,11 +137,8 @@ def main():
         print('         .Ploting PCA results', file=open("log_file.txt", "a"))
 
         dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
-        """
-        for gra in gra_list:
-            dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
-        
-        """
+
+
         print('         .Running SODA on base granularity', file=open("log_file.txt", "a"))
         dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i)
 
