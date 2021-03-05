@@ -162,7 +162,7 @@ def divide(data, n_windows = 100, n_samples = 50):
         
     return reduced_data, data_sample_id
 
-def Normalisation(data):
+def Normalisation(background_train,streaming_data):
     """Use standart deviation to normalise the data
     -- Input
     - data
@@ -170,11 +170,14 @@ def Normalisation(data):
     - Normalised data
     """
 
-    # Normalizing whole data
-    scaler = StandardScaler().fit(data)
-    norm_data = scaler.transform(data)
+    scaler = StandardScaler().fit(background_train)
+    background_train = scaler.transform(background_train)
 
-    return norm_data
+    # Normalizing whole data
+    scaler = StandardScaler().fit(streaming_data)
+    streaming_data = scaler.transform(streaming_data)
+
+    return background_train,streaming_data
 
 def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     """Create and save the PCA model
@@ -238,10 +241,12 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     - Attributes Influence
     """
 
-    # Calcules the PCA and projects the data-set into them
+    data = np.vstack((background_train,streaming_data))
 
+    # Calcules the PCA and projects the data-set into them
+    
     pca= PCA(n_components = N_PCs)
-    pca.fit(background_train)
+    pca.fit(data)
             
     # Calculates the total variance maintained by each PCs
             

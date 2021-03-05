@@ -34,10 +34,10 @@ def main():
     ####### Variables set by user #######
 
     # PCA number of components
-    N_PCs = 6
+    N_PCs = 8
 
     # List of granularities 
-    gra_list = [6,10,14,16] 
+    gra_list = [2,3,4,5] 
 
     # Number of iteration
     iterations = 4
@@ -64,7 +64,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 7000)
+    background, _ = dm.divide(background, 100, 15000)
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
@@ -114,9 +114,6 @@ def main():
         # Normalize Data
 
         print('         .Normalizing Data', file=open("log_file.txt", "a"))
-        
-        #norm_streaming_data = dm.Normalisation(streaming_data)
-        #norm_background_train = dm.Normalisation(background_train)
 
         # Calculates Statistical attributes
 
@@ -131,15 +128,17 @@ def main():
 
         print('         .Normalizing Features', file=open("log_file.txt", "a"))
 
-        norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
-        norm_xyz_background_train = dm.Normalisation(xyz_background_train)
+        #norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
+        #norm_xyz_background_train = dm.Normalisation(xyz_background_train)
+
+        norm_xyz_background_train,norm_xyz_streaming_data = dm.Normalisation(xyz_background_train,xyz_streaming_data)
 
         # Calculates PCA and projects the sub-sets 
 
         print('         .Calculating PCA:', file=open("log_file.txt", "a"))
 
-        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
         #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
+        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
 
         # Plots PCA results
 
