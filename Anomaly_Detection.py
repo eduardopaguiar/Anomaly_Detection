@@ -37,13 +37,13 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [2,3,4,5,6,7,8] 
+    gra_list = [14] 
 
     # Number of iteration
     iterations = 4
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 4
+    PROCESSES = 1
 
     # Number of Data-set divisions
     windows = 100
@@ -86,7 +86,7 @@ def main():
 
         print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
 
-        background_train, background_test = train_test_split(background, test_size=0.20, random_state=42)
+        background_train, background_test = train_test_split(background, test_size=0.30, random_state=42)
 
         # Defining number of events Signal events on online phase.
 
