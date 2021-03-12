@@ -87,13 +87,12 @@ def main():
         print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
 
         background_train, background_test = train_test_split(background, test_size=0.30, random_state=42)
-
+        background_test, _ = dm.divide(background_test, 100, 29700)
         # Defining number of events Signal events on online phase.
 
-        signal_online_samples = int(len(background_test)/background_percent)
+        signal_online_samples = 300
 
         # Devide online signal
-
         print('         .Selecting Signal on the following porpotion:', file=open("log_file.txt", "a"))
         print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
         print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
