@@ -46,6 +46,9 @@ def main():
     PROCESSES = 4
 
     # Number of Data-set divisions
+    total = 2000
+
+    # Number of Data-set divisions
     windows = 100
 
     # Percentage of background samples on the testing phase
@@ -56,7 +59,7 @@ def main():
 
     # Using multiprocess to load the data-sets into the code
 
-    print('         ==== Commencing Initiation ====\n', file=open("log_file.txt", "a"))
+    print('         ==== Commencing Initiation ====\n', file=open("log_file.txt", "a+"))
 
     ### Background    
     #b_name='/AtlasDisk/user/pestana/Input/Input_Background_1.csv'
@@ -64,7 +67,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 24000)
+    background, _ = dm.divide(background, windows, total)
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
@@ -82,32 +85,39 @@ def main():
 
     with multiprocessing.Pool(PROCESSES) as pool:
 
-        TASKS = [(model, (n_i,background,background_percent,signal,windows,N_PCs,gra_list)) for n_i in range(iterations)]
+        TASKS = [(model, (n_i,background,background_percent,signal,windows,N_PCs,gra_list, total)) for n_i in range(iterations)]
 
         print('             .Executing SODA for granularities', gra_list, file=open("log_file.txt", "a"))
 
         pool.map(calculatestar, TASKS)
 
-def model(n_i,background,background_percent,signal,windows,N_PCs,gra_list):
+def model(n_i,background,background_percent,signal,windows,N_PCs,gra_list, total):
 
     print('\n     => Iteration Number', (n_i+1), file=open("log_file.txt", "a"))
 
     # Devide data-set into training and testing sub-sets
 
-    print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
+    print('         .Dividing training and testing sub-sets', file=open("log_file.txt", "a"))
 
-
+    test_size = 0.3
+    test = int(total*test_size)
+    b_test = int(test*background_percent/100)
     background_train, background_test = train_test_split(background, test_size=0.30, random_state=42)
+    background_test, _ = dm.divide(background_test, windows, b_test)
 
     # Defining number of events Signal events on online phase.
 
-    signal_online_samples = int(len(background_test)/background_percent)
+    signal_online_samples = int(test - b_test)
+
 
     # Devide online signal
 
     print('         .Selecting Signal on the following porpotion:', file=open("log_file.txt", "a"))
     print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
     print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
+    print('             .{:9d} of Background samples (Offline)'.format(int(total*(1-test_size))), file=open("log_file.txt", "a"))
+    print('             .{:9d} of Background samples (Online)'.format(int(b_test)), file=open("log_file.txt", "a"))
+    print('             .{:9d} of Signal samples (Online)'.format(int(signal_online_samples)), file=open("log_file.txt", "a"))
 
     reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
 
