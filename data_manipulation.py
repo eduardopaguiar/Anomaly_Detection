@@ -241,22 +241,48 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     - Attributes Influence
     """
 
+    """
     data = np.vstack((background_train,streaming_data))
+
+    scaler = StandardScaler().fit(data)
+    data = scaler.transform(data)
 
     # Calcules the PCA and projects the data-set into them
     
     pca= PCA(n_components = N_PCs)
     pca.fit(data)
-            
+
+
+    proj_background_train = pca.transform(background_train)
+    proj_streaming_data = pca.transform(streaming_data)
+
+    np.savetxt('proj_background_train_junto_norm.csv',proj_background_train,delimiter=',')
+    np.savetxt('proj_streaming_data_junto_norm.csv',proj_streaming_data,delimiter=',')
+    """
+
+    scaler = StandardScaler().fit(background_train)
+    background_train = scaler.transform(background_train)
+
+    pca_2= PCA(n_components = N_PCs)
+    pca_2.fit(background_train)
+
+    streaming_data = scaler.transform(streaming_data)
+
+    pca= PCA(n_components = N_PCs)
+    pca.fit(streaming_data)
+
+    proj_background_train = pca_2.transform(background_train)
+    proj_streaming_data = pca.transform(streaming_data)
+
+    np.savetxt('proj_background_train_sep_std.csv',proj_background_train,delimiter=',')
+    np.savetxt('proj_streaming_data_sep_std.csv',proj_streaming_data,delimiter=',')
+
     # Calculates the total variance maintained by each PCs
             
     pca_variation = pca.explained_variance_ratio_ * 100
     
 
     print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2), file=open("log_file.txt", "a"))
-
-    proj_background_train = pca.transform(background_train)
-    proj_streaming_data = pca.transform(streaming_data)
  
 
     ### Attributes analyses ###

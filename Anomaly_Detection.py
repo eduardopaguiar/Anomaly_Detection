@@ -37,13 +37,13 @@ def main():
     N_PCs = 8
 
     # List of granularities 
-    gra_list = [2,3,4] 
+    gra_list = [6] 
 
     # Number of iteration
-    iterations = 4
+    iterations = 16
 
     # Number of process to create in the multiprocessing step
-    PROCESSES = 3
+    PROCESSES = 4
 
     # Number of Data-set divisions
     windows = 100
@@ -64,7 +64,7 @@ def main():
 
     background = np.genfromtxt(b_name, delimiter=',')
     background = background[1:,:]
-    background, _ = dm.divide(background, 100, 100000)
+    background, _ = dm.divide(background, 100, 24000)
     print("     .Background Loaded...", file=open("log_file.txt", "a"))
 
     ### Signal
@@ -80,89 +80,111 @@ def main():
 
     print('      ==== Commencing Data Processing ====', file=open("log_file.txt", "a"))
 
-    for n_i in range(iterations):
+    with multiprocessing.Pool(PROCESSES) as pool:
 
-        print('\n     => Iteration Number', (n_i+1), file=open("log_file.txt", "a"))
+        TASKS = [(model, (n_i,background,background_percent,signal,windows,N_PCs,gra_list)) for n_i in range(iterations)]
 
-        # Devide data-set into training and testing sub-sets
+        print('             .Executing SODA for granularities', gra_list, file=open("log_file.txt", "a"))
 
-        print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
+        pool.map(calculatestar, TASKS)
 
-        background_train, background_test = train_test_split(background, test_size=0.20, random_state=42)
+def model(n_i,background,background_percent,signal,windows,N_PCs,gra_list):
 
-        # Defining number of events Signal events on online phase.
+    print('\n     => Iteration Number', (n_i+1), file=open("log_file.txt", "a"))
 
-        signal_online_samples = int(len(background_test)/background_percent)
+    # Devide data-set into training and testing sub-sets
 
-        # Devide online signal
+    print('         .Deviding training and testing sub-sets', file=open("log_file.txt", "a"))
 
-        print('         .Selecting Signal on the following porpotion:', file=open("log_file.txt", "a"))
-        print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
-        print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
 
-        reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
+    background_train, background_test = train_test_split(background, test_size=0.30, random_state=42)
 
-        # Nextly, the Signal data processed is saved in the Analised data directory.
+    # Defining number of events Signal events on online phase.
+
+    signal_online_samples = int(len(background_test)/background_percent)
+
+    # Devide online signal
+
+    print('         .Selecting Signal on the following porpotion:', file=open("log_file.txt", "a"))
+    print('             .' + str(background_percent) + '% Background samples', file=open("log_file.txt", "a"))
+    print('             .' + str(100-background_percent) + '% Signal samples', file=open("log_file.txt", "a"))
+
+    reduced_signal, signal_sample_id = dm.divide(signal, windows, signal_online_samples)
+
+    # Nextly, the Signal data processed is saved in the Analised data directory.
+
+    #np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
+    #np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
+
+    # Concatenating Signal and the Test Background sub-set
+
+    streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
+
+    # Normalize Data
+
+    norm_background_train = preprocessing.normalize(background_train)
+    norm_streaming_data = preprocessing.normalize(streaming_data)
+
+    #print('         .Normalizing Data', file=open("log_file.txt", "a"))
+
+    # Calculates Statistical attributes
+
+    print('         .Calculating statistical attributes', file=open("log_file.txt", "a"))
+
+    xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
+    xyz_background_train = dm.statistics_attributes(norm_background_train)
+    #xyz_streaming_data = dm.statistics_attributes(streaming_data)
+    #xyz_background_train = dm.statistics_attributes(background_train)
+
+    #xyz_signal = dm.statistics_attributes(signal)
+    #xyz_background = dm.statistics_attributes(background)
     
-        #np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_iteration_' + str(n_i) + '_' + s_name,reduced_signal,delimiter=',')
-        #np.savetxt('/AtlasDisk/user/pestana/Output/Analysed_Signal/Reduced_ID_iteration_' + str(n_i) + '_' + s_name,signal_sample_id,delimiter=',')
+    #transformer = preprocessing.Normalizer().fit(np.vstack((xyz_signal,xyz_background)))
     
-        # Concatenating Signal and the Test Background sub-set
+    #xyz_background = transformer.transform(xyz_background)
+    #xyz_signal = transformer.transform(xyz_signal)
 
-        streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
+    #np.savetxt('xyz_reduced_signal_norm.csv',xyz_signal,delimiter=',')
+    #np.savetxt('xyz_background_norm.csv',xyz_background,delimiter=',')
 
-        # Normalize Data
+    # Normalize Features
 
-        print('         .Normalizing Data', file=open("log_file.txt", "a"))
+    #print('         .Normalizing Features', file=open("log_file.txt", "a"))
 
-        # Calculates Statistical attributes
+    # Calculates PCA and projects the sub-sets 
 
-        print('         .Calculating statistical attributes', file=open("log_file.txt", "a"))
+    print('         .Calculating PCA:', file=open("log_file.txt", "a"))
 
-        #xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
-        #xyz_background_train = dm.statistics_attributes(norm_background_train)
-        xyz_streaming_data = dm.statistics_attributes(streaming_data)
-        xyz_background_train = dm.statistics_attributes(background_train)
+    proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
+    #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
 
-        # Normalize Features
+    # Plots PCA results
 
-        print('         .Normalizing Features', file=open("log_file.txt", "a"))
+    print('         .Ploting PCA results', file=open("log_file.txt", "a"))
 
-        #norm_xyz_streaming_data = dm.Normalisation(xyz_streaming_data)
-        #norm_xyz_background_train = dm.Normalisation(xyz_background_train)
+    dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
 
-        norm_xyz_background_train,norm_xyz_streaming_data = dm.Normalisation(xyz_background_train,xyz_streaming_data)
-
-        # Calculates PCA and projects the sub-sets 
-
-        print('         .Calculating PCA:', file=open("log_file.txt", "a"))
-
-        #proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(xyz_background_train,xyz_streaming_data,N_PCs)
-        proj_xyz_background_train, proj_xyz_streaming_data, xyz_mantained_variation, xyz_attributes_influence = dm.PCA_Projection(norm_xyz_background_train,norm_xyz_streaming_data,N_PCs)
-
-        # Plots PCA results
-
-        print('         .Ploting PCA results', file=open("log_file.txt", "a"))
-
-        dm.PCA_Analysis(xyz_mantained_variation,xyz_attributes_influence)
-        """
-        for gra in gra_list:
-            dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
-        
-        """
-        print('         .Running SODA on base granularity', file=open("log_file.txt", "a"))
-        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i)
-
-        print('         .Creating pool with %d processes:' % PROCESSES, file=open("log_file.txt", "a"))
+    #proj_xyz_background_train = preprocessing.normalize(proj_xyz_background_train)
+    #proj_xyz_streaming_data = preprocessing.normalize(proj_xyz_streaming_data)
     
-        with multiprocessing.Pool(PROCESSES) as pool:
-
-            TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)) for gra in gra_list]
+    for gra in gra_list:
+        dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)
     
-            print('             .Executing SODA for granularities', gra_list, file=open("log_file.txt", "a"))
+    """
+    print('         .Running SODA on base granularity', file=open("log_file.txt", "a"))
+    dm.SODA_Granularity_Iteration(proj_xyz_background_train,proj_xyz_streaming_data, 1,len(background_test),n_i)
 
-            pool.map(calculatestar, TASKS)
+    print('         .Creating pool with %d processes:' % PROCESSES, file=open("log_file.txt", "a"))
 
+    with multiprocessing.Pool(PROCESSES) as pool:
+
+        TASKS = [(dm.SODA_Granularity_Iteration, (proj_xyz_background_train,proj_xyz_streaming_data, gra,len(background_test),n_i)) for gra in gra_list]
+
+        print('             .Executing SODA for granularities', gra_list, file=open("log_file.txt", "a"))
+
+        pool.map(calculatestar, TASKS)
+    """
+    
         
     print('\n        ====Data Processing Complete====\n', file=open("log_file.txt", "a"))
     print('=*='*17, file=open("log_file.txt", "a"))
