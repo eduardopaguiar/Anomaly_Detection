@@ -200,7 +200,8 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     ax.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    fig.savefig('/AtlasDisk/user/pestana/Output/results/Percentage_of_Variance_Held.png', bbox_inches='tight')
+    #fig.savefig('/AtlasDisk/user/pestana/Output/results/Percentage_of_Variance_Held.png', bbox_inches='tight')
+    fig.savefig('results/Percentage_of_Variance_Held.png', bbox_inches='tight')
 
                         
     sorted_sensors_contribution = attributes_influence.values[:]      
@@ -222,7 +223,8 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     plt.xticks(rotation=90)
     ax.grid()
     
-    fig.savefig('/AtlasDisk/user/pestana/Output/results/Attributes_Contribution.png', bbox_inches='tight')
+    #fig.savefig('/AtlasDisk/user/pestana/Output/results/Attributes_Contribution.png', bbox_inches='tight')
+    fig.savefig('results/Attributes_Contribution.png', bbox_inches='tight')
 
     return
 
@@ -239,22 +241,48 @@ def PCA_Projection(background_train,streaming_data, N_PCs, maintained_features=0
     - Attributes Influence
     """
 
+    """
     data = np.vstack((background_train,streaming_data))
+
+    scaler = StandardScaler().fit(data)
+    data = scaler.transform(data)
 
     # Calcules the PCA and projects the data-set into them
     
     pca= PCA(n_components = N_PCs)
     pca.fit(data)
-            
+
+
+    proj_background_train = pca.transform(background_train)
+    proj_streaming_data = pca.transform(streaming_data)
+
+    np.savetxt('proj_background_train_junto_norm.csv',proj_background_train,delimiter=',')
+    np.savetxt('proj_streaming_data_junto_norm.csv',proj_streaming_data,delimiter=',')
+    """
+
+    scaler = StandardScaler().fit(background_train)
+    background_train = scaler.transform(background_train)
+
+    pca_2= PCA(n_components = N_PCs)
+    pca_2.fit(background_train)
+
+    streaming_data = scaler.transform(streaming_data)
+
+    pca= PCA(n_components = N_PCs)
+    pca.fit(streaming_data)
+
+    proj_background_train = pca_2.transform(background_train)
+    proj_streaming_data = pca.transform(streaming_data)
+
+    np.savetxt('proj_background_train_sep_std.csv',proj_background_train,delimiter=',')
+    np.savetxt('proj_streaming_data_sep_std.csv',proj_streaming_data,delimiter=',')
+
     # Calculates the total variance maintained by each PCs
             
     pca_variation = pca.explained_variance_ratio_ * 100
     
 
     print('             .Normal Variation maintained: %.2f' % np.round(pca_variation.sum(), decimals = 2), file=open("log_file.txt", "a"))
-
-    proj_background_train = pca.transform(background_train)
-    proj_streaming_data = pca.transform(streaming_data)
  
 
     ### Attributes analyses ###
@@ -409,20 +437,11 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
 
     # Dreate data frames to save each iteration result.
 
-    detection_info = pd.DataFrame(np.zeros((1,6)).reshape((1,-1)), columns=['Granularity','True_Positive', 'True_Negative','False_Positive','False_Negative', 'N_Groups'])
-
-    performance_info = pd.DataFrame(np.zeros((1,8)).reshape((1,-1)), columns=['Granularity', 'Time_Elapsed',
-                                                                'Mean CPU_Percentage', 'Max CPU_Percentage',
-                                                                'Mean RAM_Percentage', 'Max RAM_Percentage',
-                                                                'Mean RAM_Usage_GB', 'Max RAM_Usage_GB'])
+    detection_info = pd.DataFrame(np.zeros((1,7)).reshape((1,-1)), columns=['Granularity','True_Positive', 'True_Negative','False_Positive','False_Negative', 'N_Groups', 'Time_Elapsed'])
 
     begin = datetime.now()
 
-    performance_thread = performance()
-    performance_thread.start()
-    
     detection_info.loc[0,'Granularity'] = gra
-    performance_info.loc[0,'Granularity'] = gra
     
     Input = {'GridSize':gra, 'StaticData':offline_data, 'DistanceType': 'euclidean'}
 
@@ -485,17 +504,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     
     detection_info.loc[0,'N_Groups'] = max(soda_labels)+1
 
-    performance_thread.stop()
-    performance_out = performance_thread.join()
     final = datetime.now()
-    performance_info.loc[0,'Time_Elapsed'] = (final - begin)
-    performance_info.loc[0,'Mean CPU_Percentage'] = performance_out['mean_cpu_p']
-    performance_info.loc[0,'Max CPU_Percentage'] = performance_out['max_cpu_p']
-    performance_info.loc[0,'Mean RAM_Percentage'] = performance_out['mean_ram_p']
-    performance_info.loc[0,'Max RAM_Percentage'] = performance_out['max_ram_p']
-    performance_info.loc[0,'Mean RAM_Usage_GB'] = performance_out['mean_ram_u']
-    performance_info.loc[0,'Max RAM_Usage_GB'] = performance_out['max_ram_u']
-
-    detection_info.to_csv('/AtlasDisk/user/pestana/Output/results/detection_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
-    performance_info.to_csv('/AtlasDisk/user/pestana/Output/results/performance_info_raw_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
+    detection_info.loc[0,'Time_Elapsed'] = (final - begin)
     
+    detection_info.to_csv('results/detection_info_' + str(gra) + '_' + str(Iteration) + '.csv', index=False)
