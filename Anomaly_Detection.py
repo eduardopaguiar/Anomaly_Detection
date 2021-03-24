@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, Normalizer
 from scipy.spatial.distance import pdist, cdist, squareform
 from matplotlib.colors import ListedColormap
 from sklearn.model_selection import train_test_split
@@ -46,7 +46,7 @@ def main():
     PROCESSES = 4
 
     # Number of Data-set divisions
-    total = 25000
+    total = 20000
 
     # Number of Data-set divisions
     windows = 100
@@ -131,9 +131,9 @@ def main():
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
         # Normalize Data
-
-        norm_background_train = preprocessing.normalize(background_train)
-        norm_streaming_data = preprocessing.normalize(streaming_data)
+        scaler = Normalizer(norm='max').fit(background_train.T)
+        norm_background_train = scaler.transform(background_train.T).T
+        norm_streaming_data = scaler.transform(streaming_data.T).T
 
         #print('         .Normalizing Data', file=open("log_file.txt", "a"))
 
