@@ -603,3 +603,15 @@
                8 - 2021-03-30 12:45:44.087820      Loop
               10 - 2021-03-30 12:45:57.296739      Loop
               12 - 2021-03-30 12:46:11.017067      Loop
+         ==== Commencing Initiation ====
+
+     .Background Loaded...
+     .Signal Loaded...
+         .Calculating statistical attributes
+             .Normal Variation maintained: 72.75
+         ==== Commencing Initiation ====
+
+     .Background Loaded...
+     .Signal Loaded...
+         .Calculating statistical attributes
+             .Normal Variation maintained: 72.75

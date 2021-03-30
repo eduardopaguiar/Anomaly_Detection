@@ -1,4 +1,4 @@
-from scipy.spatial.distance import pdist, cdist, squareform
+from scipy.spatial.distance import pdist, cdist, squareform, cosine, euclidean
 import math as mt
 import pandas as pd
 import numpy as np
@@ -8,6 +8,7 @@ from numba.typed import List
 import numba as nb
 import multiprocessing as mp
 import pickle
+import matplotlib.pyplot as plt
 
 def grid_set(data, N):
     _ , W = data.shape
@@ -82,7 +83,7 @@ def Globaldensity_Calculator(data, distancetype):
     Uniquesample = Uniquesample[index]
     Frequency = Frequency[index]
 
-    return GD, Uniquesample, Frequency
+    return GD, Uniquesample, Frequency, J
 
 @njit(fastmath = True)
 def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, distancetype):
@@ -453,7 +454,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
         
         print('{:16d} -'.format(N), datetime.now(), '     Globaldensity_Calculator', file=open("log_file.txt", "a+"))
-        GD, Uniquesample, Frequency = Globaldensity_Calculator(data, distancetype)
+        GD, Uniquesample, Frequency, _ = Globaldensity_Calculator(data, distancetype)
         
         print('{:16d} -'.format(N), datetime.now(), '     chessboard_division_njit', file=open("log_file.txt", "a+"))
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
@@ -535,3 +536,40 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
               'SystemParams': Boxparameter,
               'DistanceType': distancetype}
     return Output
+
+def SODA_plot(background,signal):
+    data = np.vstack((background,signal))
+    L1, _ = background.shape
+    #L2, _ = signal.shape
+    distancetype = 'euclidean'
+        
+    _, Uniquesample, _, J = Globaldensity_Calculator(data, distancetype)
+
+    d_a = []
+    d_m = []
+
+    for i in range (len(Uniquesample)):
+        d_a.append(np.sqrt(cosine(Uniquesample[0], Uniquesample[i])))
+        d_m.append(euclidean(Uniquesample[0], Uniquesample[i]))
+
+    # Plot With Features extraction
+
+    fig = plt.figure(figsize=[20,8])
+
+    fig.suptitle('Unique Samples Plot', fontsize=20)
+
+    ax = fig.subplots(1,1)
+    for i in range (len(Uniquesample)):
+        if J[i] < L1:
+            col = 'b'
+        else:
+            col = 'r'
+        ax.scatter(d_m[i],d_a[i],color=col)
+    plt.ylabel('$d_a$',fontsize = 20)
+    plt.xlabel('$d_m$',fontsize = 20)
+    plt.tick_params(axis='x', labelsize=14)
+    plt.tick_params(axis='y', labelsize=18)
+    ax.grid()
+
+    plt.show()
+    #fig.savefig('With_Feature_Extraction_tp.png', bbox_inches='tight')
