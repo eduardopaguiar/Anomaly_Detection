@@ -487,7 +487,7 @@ def SODA_Granularity_Iteration(offline_data,streaming_data,gra,n_backgound,Itera
     n_anomalies = 0
 
     for j in range(len(signal_centers)):
-        if cloud_info.loc[j,'Percentage_Old_Samples'] == 0 :
+        if cloud_info.loc[j,'Percentage_Old_Samples'] <= 10 :
             n_anomalies += cloud_info.loc[j,'Total_Samples']
             anomaly_clouds.append(j)
     

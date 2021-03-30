@@ -336,3 +336,270 @@
                6 - 2021-03-23 10:40:48.324978      cloud_member_recruitment_njit
                6 - 2021-03-23 10:40:49.724934      ENCERRADO
 
+         ==== Commencing Initiation ====
+
+     .Background Loaded...
+     .Signal Loaded...
+
+          ==== Initiation Complete ====
+
+=*==*==*==*==*==*==*==*==*==*==*==*==*==*==*==*==*=
+      ==== Commencing Data Processing ====
+
+     => Iteration Number 1
+         .Dividing training and testing sub-sets
+         .Selecting Signal on the following porpotion:
+             .99% Background samples
+             .1% Signal samples
+             .     7000 of Background samples (Offline)
+             .     2970 of Background samples (Online)
+             .       30 of Signal samples (Online)
+         .Calculating statistical attributes
+         .Calculating PCA:
+             .Normal Variation maintained: 73.32
+         .Ploting PCA results
+         .Running SODA on base granularity
+               1 - 2021-03-30 09:58:04.889152      Grid_set
+               1 - 2021-03-30 09:58:04.911702      Globaldensity_Calculator
+               1 - 2021-03-30 09:58:05.045084      chessboard_division_njit
+               1 - 2021-03-30 09:58:16.076109      ChessBoard_PeakIdentification_njit
+               1 - 2021-03-30 09:58:17.073262      cloud_member_recruitment_njit
+               1 - 2021-03-30 09:58:18.524193      Loop
+               1 - 2021-03-30 09:58:21.508025      Chessboard_globaldensity
+               1 - 2021-03-30 09:58:21.509093      ChessBoard_online_projection_njit
+               1 - 2021-03-30 09:58:22.164685      cloud_member_recruitment_njit
+               1 - 2021-03-30 09:58:22.716233      ENCERRADO
+
+         .Creating pool with 4 processes:
+             .Executing SODA for granularities [6, 8, 10, 12]
+               6 - 2021-03-30 09:58:26.752044      Grid_set
+               8 - 2021-03-30 09:58:26.755244      Grid_set
+               6 - 2021-03-30 09:58:26.758582      Globaldensity_Calculator
+              12 - 2021-03-30 09:58:26.760490      Grid_set
+               8 - 2021-03-30 09:58:26.762569      Globaldensity_Calculator
+              10 - 2021-03-30 09:58:26.767035      Grid_set
+              10 - 2021-03-30 09:58:26.781662      Globaldensity_Calculator
+              12 - 2021-03-30 09:58:26.782259      Globaldensity_Calculator
+               6 - 2021-03-30 09:58:26.938303      chessboard_division_njit
+               8 - 2021-03-30 09:58:26.939524      chessboard_division_njit
+              12 - 2021-03-30 09:58:26.963653      chessboard_division_njit
+              10 - 2021-03-30 09:58:26.999675      chessboard_division_njit
+               6 - 2021-03-30 09:58:35.145681      ChessBoard_PeakIdentification_njit
+               6 - 2021-03-30 09:58:36.655491      cloud_member_recruitment_njit
+               8 - 2021-03-30 09:58:38.256532      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 09:58:41.397886      ChessBoard_PeakIdentification_njit
+               8 - 2021-03-30 09:58:41.644445      cloud_member_recruitment_njit
+               6 - 2021-03-30 09:58:42.048406      Loop
+              12 - 2021-03-30 09:58:42.378745      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 09:58:47.248679      cloud_member_recruitment_njit
+              12 - 2021-03-30 09:58:50.838195      cloud_member_recruitment_njit
+               8 - 2021-03-30 09:58:53.285216      Loop
+              10 - 2021-03-30 09:59:09.250234      Loop
+              12 - 2021-03-30 09:59:23.891097      Loop
+               6 - 2021-03-30 10:16:12.576280      Chessboard_globaldensity
+               6 - 2021-03-30 10:16:12.620103      ChessBoard_online_projection_njit
+               6 - 2021-03-30 10:16:14.474267      cloud_member_recruitment_njit
+               6 - 2021-03-30 10:16:20.203581      ENCERRADO
+
+               8 - 2021-03-30 10:34:42.829204      Chessboard_globaldensity
+               8 - 2021-03-30 10:34:42.876463      ChessBoard_online_projection_njit
+               8 - 2021-03-30 10:34:46.139998      cloud_member_recruitment_njit
+               8 - 2021-03-30 10:34:54.865968      ENCERRADO
+
+              10 - 2021-03-30 10:57:51.127479      Chessboard_globaldensity
+              10 - 2021-03-30 10:57:51.180654      ChessBoard_online_projection_njit
+              10 - 2021-03-30 10:57:56.154282      cloud_member_recruitment_njit
+              10 - 2021-03-30 10:58:12.334254      ENCERRADO
+
+              12 - 2021-03-30 11:12:59.374381      Chessboard_globaldensity
+              12 - 2021-03-30 11:12:59.436299      ChessBoard_online_projection_njit
+              12 - 2021-03-30 11:13:06.210266      cloud_member_recruitment_njit
+              12 - 2021-03-30 11:13:32.254041      ENCERRADO
+
+
+     => Iteration Number 2
+         .Dividing training and testing sub-sets
+         .Selecting Signal on the following porpotion:
+             .99% Background samples
+             .1% Signal samples
+             .     7000 of Background samples (Offline)
+             .     2970 of Background samples (Online)
+             .       30 of Signal samples (Online)
+         .Calculating statistical attributes
+         .Calculating PCA:
+             .Normal Variation maintained: 69.78
+         .Ploting PCA results
+         .Running SODA on base granularity
+               1 - 2021-03-30 11:13:37.213534      Grid_set
+               1 - 2021-03-30 11:13:37.216790      Globaldensity_Calculator
+               1 - 2021-03-30 11:13:37.410219      chessboard_division_njit
+               1 - 2021-03-30 11:13:37.509150      ChessBoard_PeakIdentification_njit
+               1 - 2021-03-30 11:13:37.509467      cloud_member_recruitment_njit
+               1 - 2021-03-30 11:13:37.536165      Loop
+               1 - 2021-03-30 11:13:37.974185      Chessboard_globaldensity
+               1 - 2021-03-30 11:13:37.975206      ChessBoard_online_projection_njit
+               1 - 2021-03-30 11:13:37.975788      cloud_member_recruitment_njit
+               1 - 2021-03-30 11:13:38.045509      ENCERRADO
+
+         .Creating pool with 4 processes:
+             .Executing SODA for granularities [6, 8, 10, 12]
+               6 - 2021-03-30 11:13:41.356921      Grid_set
+               8 - 2021-03-30 11:13:41.360968      Grid_set
+               6 - 2021-03-30 11:13:41.363503      Globaldensity_Calculator
+              10 - 2021-03-30 11:13:41.366038      Grid_set
+               8 - 2021-03-30 11:13:41.367070      Globaldensity_Calculator
+              10 - 2021-03-30 11:13:41.372516      Globaldensity_Calculator
+              12 - 2021-03-30 11:13:41.377808      Grid_set
+              12 - 2021-03-30 11:13:41.395507      Globaldensity_Calculator
+              10 - 2021-03-30 11:13:41.496645      chessboard_division_njit
+               8 - 2021-03-30 11:13:41.527329      chessboard_division_njit
+               6 - 2021-03-30 11:13:41.541458      chessboard_division_njit
+              12 - 2021-03-30 11:13:41.572477      chessboard_division_njit
+               6 - 2021-03-30 11:13:47.955338      ChessBoard_PeakIdentification_njit
+               6 - 2021-03-30 11:13:49.188966      cloud_member_recruitment_njit
+               8 - 2021-03-30 11:13:51.064999      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 11:13:53.444310      ChessBoard_PeakIdentification_njit
+               8 - 2021-03-30 11:13:54.320277      cloud_member_recruitment_njit
+               6 - 2021-03-30 11:13:54.373699      Loop
+              12 - 2021-03-30 11:13:55.173723      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 11:13:58.602690      cloud_member_recruitment_njit
+              12 - 2021-03-30 11:14:02.299007      cloud_member_recruitment_njit
+               8 - 2021-03-30 11:14:05.241571      Loop
+              10 - 2021-03-30 11:14:16.002632      Loop
+              12 - 2021-03-30 11:14:30.843088      Loop
+               6 - 2021-03-30 11:33:53.111540      Chessboard_globaldensity
+               6 - 2021-03-30 11:33:53.162745      ChessBoard_online_projection_njit
+               6 - 2021-03-30 11:33:56.082592      cloud_member_recruitment_njit
+               6 - 2021-03-30 11:34:04.418608      ENCERRADO
+
+         ==== Commencing Initiation ====
+
+     .Background Loaded...
+     .Signal Loaded...
+
+          ==== Initiation Complete ====
+
+=*==*==*==*==*==*==*==*==*==*==*==*==*==*==*==*==*=
+      ==== Commencing Data Processing ====
+
+     => Iteration Number 1
+         .Dividing training and testing sub-sets
+         .Selecting Signal on the following porpotion:
+             .99% Background samples
+             .1% Signal samples
+             .     7000 of Background samples (Offline)
+             .     2970 of Background samples (Online)
+             .       30 of Signal samples (Online)
+         .Calculating statistical attributes
+         .Calculating PCA:
+             .Normal Variation maintained: 67.92
+         .Ploting PCA results
+         .Running SODA on base granularity
+               1 - 2021-03-30 11:43:53.544334      Grid_set
+               1 - 2021-03-30 11:43:53.548689      Globaldensity_Calculator
+               1 - 2021-03-30 11:43:53.624362      chessboard_division_njit
+               1 - 2021-03-30 11:44:00.589555      ChessBoard_PeakIdentification_njit
+               1 - 2021-03-30 11:44:01.733821      cloud_member_recruitment_njit
+               1 - 2021-03-30 11:44:03.324033      Loop
+               1 - 2021-03-30 11:44:06.399100      Chessboard_globaldensity
+               1 - 2021-03-30 11:44:06.400142      ChessBoard_online_projection_njit
+               1 - 2021-03-30 11:44:07.047710      cloud_member_recruitment_njit
+               1 - 2021-03-30 11:44:07.650988      ENCERRADO
+
+         .Creating pool with 4 processes:
+             .Executing SODA for granularities [6, 8, 10, 12]
+               6 - 2021-03-30 11:44:11.845304      Grid_set
+               8 - 2021-03-30 11:44:11.851614      Grid_set
+              10 - 2021-03-30 11:44:11.851963      Grid_set
+               6 - 2021-03-30 11:44:11.857484      Globaldensity_Calculator
+              10 - 2021-03-30 11:44:11.861900      Globaldensity_Calculator
+               8 - 2021-03-30 11:44:11.865363      Globaldensity_Calculator
+              12 - 2021-03-30 11:44:11.868090      Grid_set
+              12 - 2021-03-30 11:44:11.879697      Globaldensity_Calculator
+               6 - 2021-03-30 11:44:12.041785      chessboard_division_njit
+              10 - 2021-03-30 11:44:12.069271      chessboard_division_njit
+              12 - 2021-03-30 11:44:12.082263      chessboard_division_njit
+               8 - 2021-03-30 11:44:12.085563      chessboard_division_njit
+               6 - 2021-03-30 11:44:20.902767      ChessBoard_PeakIdentification_njit
+               6 - 2021-03-30 11:44:22.735943      cloud_member_recruitment_njit
+               8 - 2021-03-30 11:44:25.632798      ChessBoard_PeakIdentification_njit
+               8 - 2021-03-30 11:44:28.894289      cloud_member_recruitment_njit
+               6 - 2021-03-30 11:44:29.468536      Loop
+              10 - 2021-03-30 11:44:29.503826      ChessBoard_PeakIdentification_njit
+              12 - 2021-03-30 11:44:31.381349      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 11:44:33.911516      cloud_member_recruitment_njit
+              12 - 2021-03-30 11:44:37.576119      cloud_member_recruitment_njit
+               8 - 2021-03-30 11:44:40.071935      Loop
+              10 - 2021-03-30 11:44:53.714284      Loop
+              12 - 2021-03-30 11:45:06.554080      Loop
+               6 - 2021-03-30 11:55:47.480088      Chessboard_globaldensity
+               6 - 2021-03-30 11:55:47.534608      ChessBoard_online_projection_njit
+               6 - 2021-03-30 11:55:48.490619      cloud_member_recruitment_njit
+               6 - 2021-03-30 11:55:53.682944      ENCERRADO
+
+               8 - 2021-03-30 12:11:16.371154      Chessboard_globaldensity
+               8 - 2021-03-30 12:11:16.434822      ChessBoard_online_projection_njit
+               8 - 2021-03-30 12:11:18.623294      cloud_member_recruitment_njit
+               8 - 2021-03-30 12:11:26.562366      ENCERRADO
+
+              10 - 2021-03-30 12:28:59.058027      Chessboard_globaldensity
+              10 - 2021-03-30 12:28:59.110248      ChessBoard_online_projection_njit
+              10 - 2021-03-30 12:29:02.848493      cloud_member_recruitment_njit
+              10 - 2021-03-30 12:29:15.552798      ENCERRADO
+
+              12 - 2021-03-30 12:44:43.306492      Chessboard_globaldensity
+              12 - 2021-03-30 12:44:43.366194      ChessBoard_online_projection_njit
+              12 - 2021-03-30 12:44:48.244345      cloud_member_recruitment_njit
+              12 - 2021-03-30 12:45:07.259129      ENCERRADO
+
+
+     => Iteration Number 2
+         .Dividing training and testing sub-sets
+         .Selecting Signal on the following porpotion:
+             .99% Background samples
+             .1% Signal samples
+             .     7000 of Background samples (Offline)
+             .     2970 of Background samples (Online)
+             .       30 of Signal samples (Online)
+         .Calculating statistical attributes
+         .Calculating PCA:
+             .Normal Variation maintained: 67.96
+         .Ploting PCA results
+         .Running SODA on base granularity
+               1 - 2021-03-30 12:45:13.354925      Grid_set
+               1 - 2021-03-30 12:45:13.360346      Globaldensity_Calculator
+               1 - 2021-03-30 12:45:13.628961      chessboard_division_njit
+               1 - 2021-03-30 12:45:13.783848      ChessBoard_PeakIdentification_njit
+               1 - 2021-03-30 12:45:13.784336      cloud_member_recruitment_njit
+               1 - 2021-03-30 12:45:13.880364      Loop
+               1 - 2021-03-30 12:45:14.463513      Chessboard_globaldensity
+               1 - 2021-03-30 12:45:14.466738      ChessBoard_online_projection_njit
+               1 - 2021-03-30 12:45:14.467182      cloud_member_recruitment_njit
+               1 - 2021-03-30 12:45:14.539235      ENCERRADO
+
+         .Creating pool with 4 processes:
+             .Executing SODA for granularities [6, 8, 10, 12]
+               8 - 2021-03-30 12:45:19.050767      Grid_set
+              12 - 2021-03-30 12:45:19.055935      Grid_set
+               6 - 2021-03-30 12:45:19.057794      Grid_set
+              12 - 2021-03-30 12:45:19.063216      Globaldensity_Calculator
+               8 - 2021-03-30 12:45:19.070969      Globaldensity_Calculator
+              10 - 2021-03-30 12:45:19.071658      Grid_set
+               6 - 2021-03-30 12:45:19.071977      Globaldensity_Calculator
+              10 - 2021-03-30 12:45:19.078256      Globaldensity_Calculator
+               8 - 2021-03-30 12:45:19.267930      chessboard_division_njit
+              12 - 2021-03-30 12:45:19.306485      chessboard_division_njit
+              10 - 2021-03-30 12:45:19.338759      chessboard_division_njit
+               6 - 2021-03-30 12:45:19.342589      chessboard_division_njit
+               6 - 2021-03-30 12:45:27.808679      ChessBoard_PeakIdentification_njit
+               6 - 2021-03-30 12:45:28.854206      cloud_member_recruitment_njit
+               8 - 2021-03-30 12:45:31.079053      ChessBoard_PeakIdentification_njit
+               8 - 2021-03-30 12:45:33.692791      cloud_member_recruitment_njit
+              10 - 2021-03-30 12:45:34.062603      ChessBoard_PeakIdentification_njit
+               6 - 2021-03-30 12:45:34.167702      Loop
+              12 - 2021-03-30 12:45:37.302794      ChessBoard_PeakIdentification_njit
+              10 - 2021-03-30 12:45:38.689647      cloud_member_recruitment_njit
+              12 - 2021-03-30 12:45:43.789066      cloud_member_recruitment_njit
+               8 - 2021-03-30 12:45:44.087820      Loop
+              10 - 2021-03-30 12:45:57.296739      Loop
+              12 - 2021-03-30 12:46:11.017067      Loop

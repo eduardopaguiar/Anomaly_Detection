@@ -34,7 +34,7 @@ def main():
     ####### Variables set by user #######
 
     # PCA number of components
-    N_PCs = 5
+    N_PCs = 6
 
     # List of granularities 
     gra_list = [6,8,10,12] 
@@ -46,7 +46,7 @@ def main():
     PROCESSES = 4
 
     # Number of Data-set divisions
-    total = 20000
+    total = 10000
 
     # Number of Data-set divisions
     windows = 100
@@ -131,9 +131,9 @@ def main():
         streaming_data = np.concatenate((background_test,reduced_signal), axis=0)
 
         # Normalize Data
-        scaler = Normalizer(norm='max').fit(background_train.T)
-        norm_background_train = scaler.transform(background_train.T).T
-        norm_streaming_data = scaler.transform(streaming_data.T).T
+        #scaler = Normalizer(norm='max').fit(background_train.T)
+        #norm_background_train = scaler.transform(background_train.T).T
+        #norm_streaming_data = scaler.transform(streaming_data.T).T
 
         #print('         .Normalizing Data', file=open("log_file.txt", "a"))
 
@@ -141,10 +141,10 @@ def main():
 
         print('         .Calculating statistical attributes', file=open("log_file.txt", "a"))
 
-        xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
-        xyz_background_train = dm.statistics_attributes(norm_background_train)
-        #xyz_streaming_data = dm.statistics_attributes(streaming_data)
-        #xyz_background_train = dm.statistics_attributes(background_train)
+        #xyz_streaming_data = dm.statistics_attributes(norm_streaming_data)
+        #xyz_background_train = dm.statistics_attributes(norm_background_train)
+        xyz_streaming_data = dm.statistics_attributes(streaming_data)
+        xyz_background_train = dm.statistics_attributes(background_train)
 
         #xyz_signal = dm.statistics_attributes(signal)
         #xyz_background = dm.statistics_attributes(background)
