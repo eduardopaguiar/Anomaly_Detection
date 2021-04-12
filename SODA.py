@@ -571,5 +571,5 @@ def SODA_plot(background,signal):
     plt.tick_params(axis='y', labelsize=18)
     ax.grid()
 
-    plt.show()
-    #fig.savefig('With_Feature_Extraction_tp.png', bbox_inches='tight')
+    #plt.show()
+    fig.savefig('results/Unique_Samples_Plot.png', bbox_inches='tight')
