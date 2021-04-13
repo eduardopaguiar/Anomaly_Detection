@@ -188,6 +188,7 @@ def PCA_Analysis(mantained_variation, attributes_influence,laplace=True):
     - Saves plot figures in results folder
     """
 
+
     # Plots the variation mantained by each PC
 
     fig = plt.figure(figsize=[16,8])
