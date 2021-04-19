@@ -46,7 +46,7 @@ def main():
     PROCESSES = 4
 
     # Number of Data-set divisions
-    total = 10000
+    total = 1000
 
     # Number of Data-set divisions
     windows = 100

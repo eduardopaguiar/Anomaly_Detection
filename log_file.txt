@@ -615,3 +615,6 @@
      .Signal Loaded...
          .Calculating statistical attributes
              .Normal Variation maintained: 72.75
+         ==== Commencing Initiation ====
+
+     .Background Loaded...
