@@ -68,6 +68,7 @@ def pi_calculator(Uniquesample, mode):
 def Globaldensity_Calculator(data, distancetype):
     Uniquesample, J, K = np.unique(data, axis=0, return_index=True, return_inverse=True)
     Frequency, _ = np.histogram(K,bins=len(J))
+    
     uspi1 = pi_calculator(Uniquesample, distancetype)
 
     sum_uspi1 = sum(uspi1)
@@ -76,7 +77,8 @@ def Globaldensity_Calculator(data, distancetype):
     uspi2 = pi_calculator(Uniquesample, 'cosine')
 
     sum_uspi2 = sum(uspi2)
-    Density_2 = uspi1 / sum_uspi2
+    Density_2 = uspi2 / sum_uspi2
+
     GD = (Density_2+Density_1) * Frequency
     index = GD.argsort()[::-1]
     GD = GD[index]
@@ -87,20 +89,27 @@ def Globaldensity_Calculator(data, distancetype):
 
 @njit(fastmath = True)
 def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, distancetype):
-    L, W = Uniquesample.shape
-    if distancetype == 'euclidean':
-        W = 1
-
-    BOX = [Uniquesample[k] for k in range(W)]
-    BOX_miu = [Uniquesample[k] for k in range(W)]
-    BOX_S = [1]*W
-    BOX_X = [np.sum(Uniquesample[k]**2) for k in range(W)]
+    L, WW = Uniquesample.shape
+    W = 1
+    
+    contador = 0
+    BOX = np.zeros((L,WW))
+    BOX_miu = np.zeros((L,WW))
+    BOX_S = np.zeros(L)
+    BOX_X = np.zeros(L)
+    BOXMT = np.zeros(L)
     NB = W
-    BOXMT = List([MMtypicality[k] for k in range(W)])
-
+    
+    BOX[contador,:] = Uniquesample[0,:]
+    BOX_miu[contador,:] = Uniquesample[0,:]
+    BOX_S[contador] = 1
+    BOX_X[contador] = np.sum(Uniquesample[0]**2)
+    BOXMT[contador] = MMtypicality[0]
+    contador += 1
+                   
     for i in range(W,L):
         XA = Uniquesample[i].reshape(1,-1)
-        XB = BOX_miu
+        XB = BOX_miu[:contador,:]
         a = [] # Euclidean
         b = [] # Cosine
         for ii in range (len(XA)):
@@ -113,10 +122,10 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
                 denom_a = 0 # Cosine
                 denom_b = 0 # Cosine
                 for k in range (len(XB[j])):
-                    aux1.append((XB[j][k]-XA[ii,k])**2) # Euclidean
-                    bux1 += ((XB[j][k]-XA[ii,k])**2) # Euclidean
-                    dot += (XB[j][k]*XA[ii,k]) # Cosine
-                    denom_a += (XB[j][k] * XB[j][k]) # Cosine
+                    aux1.append((XB[j,k]-XA[ii,k])**2) # Euclidean
+                    bux1 += ((XB[j,k]-XA[ii,k])**2) # Euclidean
+                    dot += (XB[j,k]*XA[ii,k]) # Cosine
+                    denom_a += (XB[j,k] * XB[j,k]) # Cosine
                     denom_b += (XA[ii,k] * XA[ii,k]) # Cosine
                 aux2.append(bux1**(0.5)) # Euclidean
                 d2 = (1 - ((dot / ((denom_a ** 0.5) * (denom_b ** 0.5))))) # Cosine
@@ -135,12 +144,13 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
         COUNT = len(SQ)
 
         if COUNT == 0:
-            BOX.append(Uniquesample[i])
+            BOX[contador,:] = Uniquesample[i]
+            BOX_miu[contador,:] = Uniquesample[i]
+            BOX_S[contador] = 1
+            BOX_X[contador] = np.sum(Uniquesample[i]**2)
+            BOXMT[contador] = MMtypicality[i]
             NB = NB + 1
-            BOX_S.append(1)
-            BOX_miu.append(Uniquesample[i])
-            BOX_X.append(np.sum(Uniquesample[i]**2))
-            BOXMT.append(MMtypicality[i])
+            contador += 1
 
         if COUNT >= 1:
             DIS = [distance[S,0]/interval1[0] + distance[S,1]/interval2[0] for S in SQ]# pylint: disable=E1136  # pylint/issues/3139
@@ -155,7 +165,12 @@ def chessboard_division_njit(Uniquesample, MMtypicality, interval1, interval2, d
             BOX_X[SQ[b]] = (BOX_S[SQ[b]]-1)/BOX_S[SQ[b]]*BOX_X[SQ[b]] + np.sum(Uniquesample[i]**2)/BOX_S[SQ[b]]
             BOXMT[SQ[b]] = BOXMT[SQ[b]] + MMtypicality[i] 
 
-    return BOX, BOX_miu, BOX_X, BOX_S, BOXMT, NB
+    BOX_new = BOX[:contador,:]
+    BOX_miu_new = BOX_miu[:contador,:]
+    BOX_X_new = BOX_X[:contador]
+    BOX_S_new = BOX_S[:contador]
+    BOXMT_new = BOXMT[:contador]
+    return BOX_new, BOX_miu_new, BOX_X_new, BOX_S_new, BOXMT_new, NB
 
 @njit(fastmath = True)
 def ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,Internval1,Internval2, distancetype):
@@ -450,22 +465,21 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         N = Input['GridSize']
         distancetype = Input['DistanceType']
 
-        print('{:16d} -'.format(N), datetime.now(), '     Grid_set', file=open("log_file.txt", "a+"))
+        print('{:16d} -'.format(N), datetime.now(), '     Grid_set'  )
         X1, AvD1, AvD2, grid_trad, grid_angl = grid_set(data,N)
         
-        print('{:16d} -'.format(N), datetime.now(), '     Globaldensity_Calculator', file=open("log_file.txt", "a+"))
+        print('{:16d} -'.format(N), datetime.now(), '     Globaldensity_Calculator'  )
         GD, Uniquesample, Frequency, _ = Globaldensity_Calculator(data, distancetype)
         
-        print('{:16d} -'.format(N), datetime.now(), '     chessboard_division_njit', file=open("log_file.txt", "a+"))
+        print('{:16d} -'.format(N), datetime.now(), '     chessboard_division_njit'  )
+        var = {'a': Uniquesample, 'b': GD, 'c':grid_trad, 'd':grid_angl, 'e':distancetype}
+        pickle.dump(var, open('var.pkl','wb'))
         BOX,BOX_miu,BOX_X,BOX_S,BOXMT,NB = chessboard_division_njit(Uniquesample,GD,grid_trad,grid_angl, distancetype)
-        BOX = np.asarray(BOX)
-        BOX_miu = np.asarray(BOX_miu)
-        BOX_S = np.asarray(BOX_S)
 
-        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_PeakIdentification_njit', file=open("log_file.txt", "a+"))
+        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_PeakIdentification_njit'  )
         Center,ModeNumber = ChessBoard_PeakIdentification_njit(BOX_miu,BOXMT,NB,grid_trad,grid_angl, distancetype)
         
-        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a+"))        
+        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit'  )        
         Center_numba = List(Center)
         #Members,Membernumber,Membership,IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
         IDX = cloud_member_recruitment_njit(ModeNumber,Center_numba,data,grid_trad,float(grid_angl), distancetype)
@@ -499,7 +513,7 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
         L1 = Boxparameter ['L']
         L2, _ = Data2.shape
         
-        print('{:16d} -'.format(N), datetime.now(), '     Loop', file=open("log_file.txt", "a+"))   
+        print('{:16d} -'.format(N), datetime.now(), '     Loop'  )   
         for k in range(L2):
             XM, AvM, AvA = data_standardization_njit(Data2[k,:], XM, AvM, AvA, k+L1)
 
@@ -511,18 +525,18 @@ def SelfOrganisedDirectionAwareDataPartitioning(Input, Mode):
             
             BOX, BOX_miu, BOX_S, NB = Chessboard_online_merge_njit(BOX,BOX_miu,BOX_S,NB,interval1,interval2)
 
-        print('{:16d} -'.format(N), datetime.now(), '     Chessboard_globaldensity', file=open("log_file.txt", "a+"))   
+        print('{:16d} -'.format(N), datetime.now(), '     Chessboard_globaldensity'  )   
         BOXG = Chessboard_globaldensity(BOX_miu,BOX_S,NB)
 
-        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_online_projection_njit', file=open("log_file.txt", "a+"))   
+        print('{:16d} -'.format(N), datetime.now(), '     ChessBoard_online_projection_njit'  )   
         Center, ModeNumber = ChessBoard_online_projection_njit(BOX_miu,BOXG,NB,interval1,interval2)
 
-        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit', file=open("log_file.txt", "a+"))   
+        print('{:16d} -'.format(N), datetime.now(), '     cloud_member_recruitment_njit'  )   
         Center_numba = List(Center)
         #Members, Membernumber, _, IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
         IDX = cloud_member_recruitment_njit(ModeNumber, Center_numba, data, interval1, interval2, distancetype)
                 
-        print('{:16d} -'.format(N), datetime.now(), '     ENCERRADO\n', file=open("log_file.txt", "a+"))
+        print('{:16d} -'.format(N), datetime.now(), '     ENCERRADO\n'  )
         Boxparameter['BOX']=BOX
         Boxparameter['BOX_miu']=BOX_miu
         Boxparameter['BOX_S']=BOX_S
@@ -548,9 +562,10 @@ def SODA_plot(background,signal):
     d_a = []
     d_m = []
 
+    total = np.concatenate((background, signal), axis=0)
     for i in range (len(Uniquesample)):
-        d_a.append(np.sqrt(cosine(Uniquesample[0], Uniquesample[i])))
-        d_m.append(euclidean(Uniquesample[0], Uniquesample[i]))
+        d_a.append(np.sqrt(cosine(Uniquesample[0], total[i])))
+        d_m.append(euclidean(Uniquesample[0], total[i]))
 
     # Plot With Features extraction
 
@@ -559,12 +574,8 @@ def SODA_plot(background,signal):
     fig.suptitle('Unique Samples Plot', fontsize=20)
 
     ax = fig.subplots(1,1)
-    for i in range (len(Uniquesample)):
-        if J[i] < L1:
-            col = 'b'
-        else:
-            col = 'r'
-        ax.scatter(d_m[i],d_a[i],color=col)
+    ax.scatter(d_m[:L1],d_a[:L1],color='b')
+    ax.scatter(d_m[L1:],d_a[L1:],color='r')
     plt.ylabel('$d_a$',fontsize = 20)
     plt.xlabel('$d_m$',fontsize = 20)
     plt.tick_params(axis='x', labelsize=14)
@@ -572,4 +583,4 @@ def SODA_plot(background,signal):
     ax.grid()
 
     plt.show()
-    #fig.savefig('With_Feature_Extraction_tp.png', bbox_inches='tight')
+    fig.savefig('With_Feature_Extraction_tp.png', bbox_inches='tight')
