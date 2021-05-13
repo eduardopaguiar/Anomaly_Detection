@@ -30,13 +30,17 @@ if __name__ == '__main__':
 
     # Percentage of samples on the training phase
     test_size = 0.3
+    
     ##########################################################
     # ------------------------------------------------------ #
     # ----------------------- LOADING ---------------------- #
     # ------------------------------------------------------ #
     ##########################################################
-    # Firstly the model loads the background and signal data, then it removes the 
-    # attributes first string line, in order to avoid NaN values in the array.
+    # Firstly the model loads the background and signal data, 
+    # then it removes the attributes first string line, which 
+    # are the column names, in order to avoid NaN values in 
+    # the array.
+
     print('         ==== Commencing Initiation ====\n')
 
     ### Background    
