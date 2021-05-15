@@ -37,7 +37,6 @@ def pi_calculator(Uniquesample, mode):
         aux2 = [Uniquesample[i]-aux[i] for i in range(UN)]
         uspi = np.sum(np.power(aux2,2),axis=1)+DT1
 
-        
     if mode == 'minkowski':
         AA1 = Uniquesample.mean(0)
         X1 = sum(sum(np.power(Uniquesample,2)))/UN
