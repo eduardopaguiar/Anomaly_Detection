@@ -115,99 +115,79 @@ def main():
         # Normalize Data
         print('         .Normalizing Data')
         streaming_data = normalize(streaming_data_raw,norm='max',axis=0)
+
+        ### Create target
+
+        y =np.ones((len(reduced_background)+len(reduced_signal)))
+        y[len(reduced_background):] = -1
         
-        aux = {}
-        
+        ADP_outputs = {}
+
         print('             .Executing for granularities', gra_list)
+
         for gra in gra_list:
             print('\n\n             .Iter: {} - Granularity: {}'.format(n_i, gra))
             print('                 .ADP (5th Method)')
             output = ADP_Offline_Granularity_Iteration_5th(streaming_data, gra)
-            aux ['granularity_'+str(gra)] = output
-        ADP_outputs['iteration_'+str(n_i)] = aux
+            ADP_outputs ['granularity_'+str(gra)] = output
 
-    data_analysis['ADP_outputs'] = ADP_outputs
+        with open('kernel/ADP_outputs_iteration_' + str(n_i) + '.pkl', 'wb') as fp:
+            pickle.dump(ADP_outputs, fp)
     
-    ### >>> ADP_outputs['iteration_0']['granularity_1'].keys()
-    ### >>> dict_keys(['centre', 'IDX', 'Param', 'n_data_clouds'])
+        print('\n        ====Data Processing Complete====\n' )
+        print('=*='*17 ) 
+        print('      ==== Commencing Data Analysis ====')
+
+        data_clouds_dic = {}
     
-    print('\n        ====Data Processing Complete====\n' )
-    print('=*='*17 ) 
-    print('      ==== Commencing Data Analysis ====')
-    ### Create target
+        print('         .Formating data_clouds_dic')
 
-    y =np.ones((len(reduced_background)+len(reduced_signal)))
-    y[len(reduced_background):] = -1
-
-    data_clouds_dic = {}
-   
-    print('         .Formating data_clouds_dic')
-
-    for it in ADP_outputs:
-        aux = {}
-        for gra in ADP_outputs[it]:
-            idx = ADP_outputs[it][gra]['IDX']
+        for gra in ADP_outputs:
+            idx = ADP_outputs[gra]['IDX']
             u = np.unique(idx)
-            aux2 = {}
+            aux = {}
             for i in u:
-                aux3 = {}
+                aux2 = {}
                 data = []
                 target=[]
-
                 for j in range(len(idx)):
                     if idx[j] == i:
                         data.append(list(streaming_data[j]))
                         target.append(y[j])
 
-                aux3 ['data'] = data
-                aux3 ['target'] = target
-                aux2['data_cloud_'+str(i)] = aux3
-            aux[gra] = aux2
-        data_clouds_dic[it] = aux
-            
-    data_analysis['data_clouds_dic'] = data_clouds_dic
-    ### >>> data_clouds_dic['iteration_0']['granularity_1']['data_cloud_0'].keys()
-    ### >>> dict_keys(['data', 'target'])
+                aux2 ['data'] = data
+                aux2 ['target'] = target
+                aux['data_cloud_'+str(i)] = aux2
+            data_clouds_dic[gra] = aux
+                
+        with open('kernel/data_clouds_dic_iteration_' + 
+                    str(n_i) + '.pkl', 'wb') as fp:
+            pickle.dump(data_clouds_dic, fp)
 
-    data_clouds_info = {}
+        data_clouds_info = {}
 
-    print('         .Formating data_clouds_info')
+        print('         .Formating data_clouds_info')
 
-    for it in data_clouds_dic:
-        aux = {}
-        for gra in data_clouds_dic[it]:
-            aux2 = {
-                'n_data_clouds':len(data_clouds_dic[it][gra])
+        for gra in data_clouds_dic:
+            aux = {
+                'n_data_clouds':len(data_clouds_dic[gra])
             }
+            aux2={}
             aux3={}
-            aux4={}
-            for dc in data_clouds_dic[it][gra]:
-                target = data_clouds_dic[it][gra][dc]['target']
-                aux3[dc] = len(target)
-                aux4[dc] = target.count(-1)
-            aux2['n_events_p_dc'] = aux3
-            aux2['n_anom_p_dc'] = aux4
-            aux[gra] = aux2
-        data_clouds_info[it] = aux
-    
-    data_analysis['data_clouds_info'] = data_clouds_info
+            for dc in data_clouds_dic[gra]:
+                target = data_clouds_dic[gra][dc]['target']
+                aux2[dc] = len(target)
+                aux3[dc] = target.count(-1)
+            aux['n_events_p_dc'] = aux2
+            aux['n_anom_p_dc'] = aux3
+            data_clouds_info[gra] = aux
+        
+        with open('kernel/data_clouds_info_iteration_' + 
+                    str(n_i) + '.pkl', 'wb') as fp:
+            pickle.dump(data_clouds_info, fp)
 
-    ### >>> data_clouds_info['iteration_0']["granularity_1"].keys()
-    ### >>> dict_keys(['n_data_clouds', 'n_events_p_dc', 'n_anom_p_dc'])
-
-    ### >>> data_clouds_info['iteration_0']["granularity_1"]['n_events_p_dc'].keys()
-    ### >>> dict_keys(['data_cloud_0', 'data_cloud_1', 
-    # 'data_cloud_2', 'data_cloud_3'])
-
-    ### >>> data_clouds_info['iteration_0']["granularity_1"]['n_anom_p_dc'].keys()\
-    ### >>> dict_keys(['data_cloud_0', 'data_cloud_1', 
-    # 'data_cloud_2', 'data_cloud_3'])
-
-    with open('data_analysis.pkl', 'wb') as fp:
-        pickle.dump(data_analysis, fp)
-
-    print('\n        ====Data Analysis Complete====\n' )
-    print('=*='*17 )
+        print('\n        ====Data Analysis Complete====\n' )
+        print('=*='*17 )
 
 if __name__ == '__main__':
     main() 
