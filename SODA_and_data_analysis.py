@@ -10,26 +10,28 @@ import data_manipulation as dm
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, normalize
 from tsfresh.utilities.dataframe_functions import impute
-import ADP
+import SODA
 
-def ADP_Offline_Granularity_Iteration_5th(streaming, gra):
+def SODA_Granularity_Iteration(streaming, gra):
     begin = dm.datetime.now()
 
     ##################################
-    ##### ----- STATIC ADP ----- #####
+    ##### ----- STATIC SODA ----- #####
     ##### ---------------------- #####
 
-    Input = {'data': streaming,
-             'granularity': gra,
-             'distancetype': 'euclidean'}
+    streaming = np.matrix(streaming)
+
+    Input = {'StaticData': streaming,
+             'GridSize': gra,
+             'DistanceType': 'euclidean'}
             
         
-    ADP_streaming_output = ADP.ADP(Input, 'Offline')
+    SODA_streaming_output = SODA.SelfOrganisedDirectionAwareDataPartitioning(Input, 'Offline')
 
     # Computing the number of clouds
-    ADP_streaming_output['n_data_clouds'] = max(ADP_streaming_output['IDX']) + 1
+    SODA_streaming_output['n_data_clouds'] = max(SODA_streaming_output['IDX']) + 1
     
-    return ADP_streaming_output
+    return SODA_streaming_output
 
 def main():
     ##########################################################
@@ -46,7 +48,7 @@ def main():
     iterations = 33
 
     # Number of events
-    total = 10000
+    total = 1000
 
     # Number of Data-set divisions
     windows = 100
@@ -87,9 +89,9 @@ def main():
     print('=*='*17 )
     print('      ==== Commencing Data Processing ====')
 
-    ### Run the ADP to generates groups
+    ### Run the SODA to generates groups
     data_analysis = {}
-    ADP_outputs = {}
+    SODA_outputs = {}
 
     for n_i in range(iterations):
         print('\n     => Iteration Number', (n_i+1) )
@@ -121,18 +123,18 @@ def main():
         y =np.ones((len(reduced_background)+len(reduced_signal)))
         y[len(reduced_background):] = -1
         
-        ADP_outputs = {}
+        SODA_outputs = {}
 
         print('             .Executing for granularities', gra_list)
 
         for gra in gra_list:
             print('\n\n             .Iter: {} - Granularity: {}'.format(n_i, gra))
-            print('                 .ADP (5th Method)')
-            output = ADP_Offline_Granularity_Iteration_5th(streaming_data, gra)
-            ADP_outputs ['granularity_'+str(gra)] = output
+            print('                 .SODA')
+            output = SODA_Granularity_Iteration(streaming_data, gra)
+            SODA_outputs ['granularity_'+str(gra)] = output
 
-        with open('kernel/ADP_outputs_iteration_' + str(n_i) + '.pkl', 'wb') as fp:
-            pickle.dump(ADP_outputs, fp)
+        with open('kernel/SODA_outputs_iteration_' + str(n_i) + '.pkl', 'wb') as fp:
+            pickle.dump(SODA_outputs, fp)
     
         print('\n        ====Data Processing Complete====\n' )
         print('=*='*17 ) 
@@ -142,8 +144,8 @@ def main():
     
         print('         .Formating data_clouds_dic')
 
-        for gra in ADP_outputs:
-            idx = ADP_outputs[gra]['IDX']
+        for gra in SODA_outputs:
+            idx = SODA_outputs[gra]['IDX']
             u = np.unique(idx)
             aux = {}
             for i in u:

@@ -24,7 +24,7 @@ if __name__ == '__main__':
                         IsolationForest(contamination=signal_fraction, random_state=42),
                         LocalOutlierFactor(n_neighbors=3, contamination=signal_fraction)]
 
-    for it in range(33):
+    for it in range(10):
         
         print('\n     => Iteration Number', (it+1) )
 
@@ -55,10 +55,10 @@ if __name__ == '__main__':
                         aux2["False_Positive"] = fp
                         aux2["False_Negative"] = fn
                         aux2["Time"] = t1-t0
-                        models_dict[name] = aux3                        
+                        models_dict[name] = aux2                       
 
                     else:
-                        models_dict['mono_event'] = 1
+                        models_dict[name] = 'mono_event'
 
                 aux[dc] = models_dict
             accuracy_dict[gra] = aux
