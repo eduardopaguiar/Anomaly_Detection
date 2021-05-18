@@ -48,7 +48,7 @@ def main():
     iterations = 33
 
     # Number of events
-    total = 1000
+    total = 10000
 
     # Number of Data-set divisions
     windows = 100
