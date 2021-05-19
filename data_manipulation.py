@@ -577,7 +577,7 @@ def autoencoder(static, streaming, reduction=9, epochs=200, batch_size=32):
     output = Dense(W, activation='linear')(d)
     model = Model(inputs=visible, outputs=output)
     model.compile(optimizer='adam', loss='mse')
-    history = model.fit(static, static, epochs=epochs, batch_size=batch_size, verbose=0, validation_data=(streaming,streaming))
+    history = model.fit(static, staticx, epochs=epochs, batch_size=batch_size, verbose=0, validation_data=(streaming,streaming))
     encoder = Model(inputs=visible, outputs=bottleneck)
 
     static_encoded = encoder.predict(static)
