@@ -20,6 +20,7 @@ def OfflineADP(Input):
     unidata_pi=np.sum(np.multiply(dist,np.matlib.repmat(frequency,L,1)), axis=1)
     unidata_density=np.transpose(unidata_pi)*np.transpose(frequency)/(unidata_pi*2*L0)
     unidata_Gdensity=np.multiply(unidata_density,np.transpose(frequency))
+    samples_Gdensity = unidata_Gdensity.copy()
 
     pos = np.zeros(L)
     pos[0] = int(np.argmax(unidata_Gdensity))
@@ -156,7 +157,9 @@ def OfflineADP(Input):
 
     output = {'centre': centre,
               'IDX': IDX,
-              'Param':Param}
+              'Param':Param,
+              'CloudsGlobalDensity':unidata_Gdensity,
+              'SamplesGlobalDensity':samples_Gdensity}
     return output
 
 def HybridVersion(data,Global_mean,Global_X,ModelNumber,center,Support,K):

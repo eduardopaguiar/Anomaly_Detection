@@ -104,6 +104,8 @@ if __name__ == '__main__':
             dm.NEW_ADPOffline_Granularity_Iteration_second(static_data, streaming_data, gra, b_test, n_i)
             print('\n                 .ADP (Third Method)')
             dm.NEW_ADPOffline_Granularity_Iteration_third(static_data, streaming_data, gra, b_test, n_i)
+            print('\n                 .ADP (Fourth Method)')
+            dm.NEW_ADPOffline_Granularity_Iteration_fourth(static_data, streaming_data, gra, b_test, n_i)
 
     print('\n        ====Data Processing Complete====\n' )
     print('=*='*17 ) 

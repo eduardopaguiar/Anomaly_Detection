@@ -546,7 +546,7 @@ def calc_eos(data):
     
     return dataSaida
 
-def autoencoder(static, streaming, reduction=9, epochs=200, batch_size=32):
+def old_autoencoder(static, streaming, reduction=12, epochs=200, batch_size=32):
     # Normalize Features
     norm = Normalizer(norm='max').fit(static.T)
     static = norm.transform(static.T).T
@@ -773,6 +773,40 @@ def PCA_clouds(static, gra):
 
     return scaler, pca, proj_static
 
+def autoencoder(static, reduction=12, epochs=200, batch_size=32):
+    # Normalize Features
+    L, W = static.shape
+    
+    visible = Input(shape=(W,))
+    e = Dense(W*2)(visible)
+    e = BatchNormalization()(e)
+    e = LeakyReLU()(e)
+
+    e = Dense(W)(e)
+    e = BatchNormalization()(e)
+    e = LeakyReLU()(e)
+
+    n_bottleneck = round(reduction)
+    bottleneck = Dense(n_bottleneck)(e)
+
+    d = Dense(W)(bottleneck)
+    d = BatchNormalization()(d)
+    d = LeakyReLU()(d)
+
+    d = Dense(W*2)(d)
+    d = BatchNormalization()(d)
+    d = LeakyReLU()(d)
+
+    output = Dense(W, activation='linear')(d)
+    model = Model(inputs=visible, outputs=output)
+    model.compile(optimizer='adam', loss='mse')
+    history = model.fit(static, static, epochs=epochs, batch_size=batch_size, verbose=0)
+    encoder = Model(inputs=visible, outputs=bottleneck)
+
+    static_encoded = encoder.predict(static)
+
+    return static_encoded, encoder
+
 def NEW_ADPOffline_Granularity_Iteration_first(static, streaming, gra, b_test, n_i):
     begin = datetime.now()
 
@@ -809,7 +843,7 @@ def NEW_ADPOffline_Granularity_Iteration_first(static, streaming, gra, b_test, n
     ######################################
     ##### ----- PCA CLOUD INFO ----- #####
     ##### -------------------------- #####
-    scaler, pca, proj_static = PCA_clouds(static_clouds, gra)
+    proj_static, encoder = autoencoder(static_clouds)
 
     #########################################
     ##### ----- TRAIN CLASSIFIERS ----- #####
@@ -932,11 +966,9 @@ def NEW_ADPOffline_Granularity_Iteration_first(static, streaming, gra, b_test, n
     ##### -------------------------- #####
     if n_anomalies != 0:
         if len(anomaly_clouds) > 1:
-            scaled_streaming_clouds = scaler.transform(streaming_clouds)
-            proj_streaming = pca.transform(scaled_streaming_clouds)
+            proj_streaming = encoder.predict(streaming_clouds)
         else:
-            scaled_streaming_clouds = scaler.transform(streaming_clouds.reshape(1, -1))
-            proj_streaming = pca.transform(scaled_streaming_clouds.reshape(1, -1))
+            proj_streaming = encoder.predict(streaming_clouds.reshape(1, -1))
 
         metade = datetime.now()
         #############################################
@@ -1103,7 +1135,7 @@ def NEW_ADPOffline_Granularity_Iteration_second(static, streaming, gra, b_test, 
     ######################################
     ##### ----- PCA CLOUD INFO ----- #####
     ##### -------------------------- #####
-    scaler, pca, proj_static = PCA_clouds(static_clouds, gra)
+    proj_static, encoder = autoencoder(static_clouds)
 
     #########################################
     ##### ----- TRAIN CLASSIFIERS ----- #####
@@ -1171,8 +1203,7 @@ def NEW_ADPOffline_Granularity_Iteration_second(static, streaming, gra, b_test, 
     ##### ----- PCA CLOUD INFO ----- #####
     ##### -------------------------- #####
     if True:
-        scaled_streaming_clouds = scaler.transform(streaming_clouds)
-        proj_streaming = pca.transform(scaled_streaming_clouds)
+        proj_streaming = encoder.predict(streaming_clouds)
         metade = datetime.now()
         #############################################
         ##### ----- DETECTION INFO FOREST ----- #####
@@ -1285,7 +1316,7 @@ def NEW_ADPOffline_Granularity_Iteration_third(static, streaming, gra, b_test, n
     ######################################
     ##### ----- PCA CLOUD INFO ----- #####
     ##### -------------------------- #####
-    scaler, pca, proj_static = PCA_clouds(static_clouds, gra)
+    proj_static, encoder = autoencoder(static_clouds)
 
     #########################################
     ##### ----- TRAIN CLASSIFIERS ----- #####
@@ -1345,8 +1376,7 @@ def NEW_ADPOffline_Granularity_Iteration_third(static, streaming, gra, b_test, n
     ##### ----- PCA CLOUD INFO ----- #####
     ##### -------------------------- #####
     if True:
-        scaled_streaming_clouds = scaler.transform(streaming_clouds)
-        proj_streaming = pca.transform(scaled_streaming_clouds)
+        proj_streaming = encoder.predict(streaming_clouds)
         metade = datetime.now()
         #############################################
         ##### ----- DETECTION INFO FOREST ----- #####
@@ -1422,6 +1452,235 @@ def NEW_ADPOffline_Granularity_Iteration_third(static, streaming, gra, b_test, n
     print("\n\n.Detection Info")
     print(detection_info.to_string(index=False))
     detection_info.to_csv('results/Third_ADP_detection_info_{}_{}.csv'.format(gra,n_i), index=False)
+
+def NEW_ADPOffline_Granularity_Iteration_fourth(static, streaming, gra, b_test, n_i):
+    begin = datetime.now()
+
+    L1, W = static.shape
+    L2, _ = streaming.shape
+
+    ##################################
+    ##### ----- STATIC ADP ----- #####
+    ##### ---------------------- #####
+
+    Input = {'data': static,
+             'granularity': gra,
+             'distancetype': 'euclidean'}
+            
+    static_output = ADP.ADP(Input, 'Offline')
+
+    #########################################
+    ##### ----- TRAIN CLASSIFIERS ----- #####
+    ##### ----------------------------- #####
+    clf_forest = IsolationForest(contamination=0, bootstrap=True, random_state=0)
+    clf_forest.fit(static)
+
+    clf_svm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+    clf_svm.fit(static)
+
+    clf_LOF = LocalOutlierFactor(novelty = True)
+    clf_LOF.fit(static)
+
+    clf_elliptic = EllipticEnvelope(contamination=0, random_state=0)
+    clf_elliptic.fit(static)
+    #####################################
+    ##### ----- STREAMING ADP ----- #####
+    ##### ------------------------- #####
+    data = np.concatenate((static,streaming), axis=0)
+
+    # Dreate data frames to save each iteration result.
+    detection_info = pd.DataFrame(np.zeros((5,8)), columns=['Method', 'Granularity',
+                                                            'True_Positive', 'True_Negative',
+                                                            'False_Positive','False_Negative', 
+                                                            'N_Groups', 'Time_Elapsed'])
+
+    detection_info.loc[0,'Method'] = 'Old'
+    detection_info.loc[1,'Method'] = 'IsolationForest'
+    detection_info.loc[2,'Method'] = 'SVM-rbf'
+    detection_info.loc[3,'Method'] = 'LOF'
+    detection_info.loc[4,'Method'] = 'EllipticEnvelope'
+
+    detection_info['Granularity'] = gra
+
+    # Concatanating IDs and creating labels
+    label = np.zeros((L2))
+    label[b_test:] = 1
+    decision = np.zeros((L2))
+
+    # Execute ADP for Streaming data
+    Input = {'data': data,
+             'granularity': gra,
+             'distancetype': 'euclidean'}
+    output = ADP.ADP(Input, 'Offline')
+
+    on_center = output['centre']
+    on_IDX = output['IDX']
+    online_labels = output['IDX'][L1:]
+
+    # Detect Anomalies Based on Old Samples in Cloud
+    cloud_info = pd.DataFrame(np.zeros((len(on_center),4)),columns=['Total_Samples','Old_Samples',
+                                                                    'Percentage_Old_Samples', 'Percentage_of_Samples'])
+    
+    for j in range (len(on_IDX)):
+        if j < L1:
+            cloud_info.loc[int(on_IDX[j]),'Old_Samples'] += 1
+        cloud_info.loc[int(on_IDX[j]),'Total_Samples'] += 1
+
+    cloud_info.loc[:,'Percentage_Old_Samples'] = cloud_info.loc[:,'Old_Samples'] * 100 / cloud_info.loc[:,'Total_Samples']
+    cloud_info.loc[:,'Percentage_of_Samples'] = cloud_info.loc[:,'Total_Samples'] * 100/ cloud_info.loc[:,'Total_Samples'].sum()
+
+    anomaly_clouds=[]
+    n_anomalies = 0
+
+    for j in range(len(on_center)):
+        if cloud_info.loc[j,'Percentage_Old_Samples'] == 0 :
+            n_anomalies += cloud_info.loc[j,'Total_Samples']
+            anomaly_clouds.append(j)
+    
+    if n_anomalies != 0:
+        for j in range(len(online_labels)): 
+            if online_labels[j] in anomaly_clouds:
+                decision[j] = 1
+        
+    for j in range(len(label)):
+        if label[j] == 1:
+            if decision[j] == label[j]:
+                detection_info.loc[0,'True_Positive'] += 1
+            else:
+                detection_info.loc[0,'False_Negative'] += 1     
+        else:
+            if decision[j] == label[j]:
+                detection_info.loc[0,'True_Negative'] += 1
+            else:
+                detection_info.loc[0,'False_Positive'] += 1
+    
+    detection_info.loc[0,'N_Groups'] = max(on_IDX) + 1
+
+    final = datetime.now()
+    detection_info.loc[0,'Time_Elapsed'] = (final - begin)
+
+    if n_anomalies != 0:
+        anomaly_ids = []
+        for i in range(L2):
+            if online_labels[i] in anomaly_clouds:
+                anomaly_ids.append(i)
+
+        anomaly_events = streaming[anomaly_ids,:]
+
+        metade = datetime.now()
+        #############################################
+        ##### ----- DETECTION INFO FOREST ----- #####
+        ##### --------------------------------- #####
+        y_pred_forest = clf_forest.predict(anomaly_events)
+
+        new_decision = decision
+        for i,j in enumerate(anomaly_ids):
+            if y_pred_forest[i] == 1:
+                new_decision[j] = 1
+            else:
+                new_decision[j] = 0 
+            
+        for j in range(len(label)):
+            if label[j] == 1:
+                if new_decision[j] == label[j]:
+                    detection_info.loc[1,'True_Positive'] += 1
+                else:
+                    detection_info.loc[1,'False_Negative'] += 1     
+            else:
+                if new_decision[j] == label[j]:
+                    detection_info.loc[1,'True_Negative'] += 1
+                else:
+                    detection_info.loc[1,'False_Positive'] += 1
+        detection_info.loc[1,'N_Groups'] = max(on_IDX) + 1
+
+        final = datetime.now()
+        detection_info.loc[1,'Time_Elapsed'] = (final - begin)
+        ##########################################
+        ##### ----- DETECTION INFO SVM ----- #####
+        ##### ------------------------------ #####
+        y_pred_svm = clf_svm.predict(anomaly_events)
+        
+        new_decision = decision
+        for i,j in enumerate(anomaly_ids):
+            if y_pred_svm[i] == 1:
+                new_decision[j] = 1
+            else:
+                new_decision[j] = 0 
+            
+        for j in range(len(label)):
+            if label[j] == 1:
+                if decision[j] == label[j]:
+                    detection_info.loc[2,'True_Positive'] += 1
+                else:
+                    detection_info.loc[2,'False_Negative'] += 1     
+            else:
+                if decision[j] == label[j]:
+                    detection_info.loc[2,'True_Negative'] += 1
+                else:
+                    detection_info.loc[2,'False_Positive'] += 1
+        detection_info.loc[2,'N_Groups'] = max(on_IDX) + 1
+        final2 = datetime.now()
+        detection_info.loc[2,'Time_Elapsed'] = (metade - begin) + (final2-final)
+
+        ##########################################
+        ##### ----- DETECTION INFO LOF ----- #####
+        ##### ------------------------------ #####
+        y_pred_LOF = clf_LOF.predict(anomaly_events)
+        
+        new_decision = decision
+        for i,j in enumerate(anomaly_ids):
+            if y_pred_LOF[i] == 1:
+                new_decision[j] = 1
+            else:
+                new_decision[j] = 0 
+            
+        for j in range(len(label)):
+            if label[j] == 1:
+                if decision[j] == label[j]:
+                    detection_info.loc[3,'True_Positive'] += 1
+                else:
+                    detection_info.loc[3,'False_Negative'] += 1     
+            else:
+                if decision[j] == label[j]:
+                    detection_info.loc[3,'True_Negative'] += 1
+                else:
+                    detection_info.loc[3,'False_Positive'] += 1
+        detection_info.loc[3,'N_Groups'] = max(on_IDX) + 1
+        final = datetime.now()
+        detection_info.loc[3,'Time_Elapsed'] = (metade - begin) + (final-final2)
+        ###############################################
+        ##### ----- DETECTION INFO Elliptic ----- #####
+        ##### ----------------------------------- #####
+        y_pred_elliptic = clf_elliptic.predict(anomaly_events)
+        
+        new_decision = decision
+        for i,j in enumerate(anomaly_ids):
+            if y_pred_elliptic[i] == 1:
+                new_decision[j] = 1
+            else:
+                new_decision[j] = 0 
+            
+        for j in range(len(label)):
+            if label[j] == 1:
+                if decision[j] == label[j]:
+                    detection_info.loc[4,'True_Positive'] += 1
+                else:
+                    detection_info.loc[4,'False_Negative'] += 1     
+            else:
+                if decision[j] == label[j]:
+                    detection_info.loc[4,'True_Negative'] += 1
+                else:
+                    detection_info.loc[4,'False_Positive'] += 1
+        detection_info.loc[4,'N_Groups'] = max(on_IDX) + 1
+        final2 = datetime.now()
+        detection_info.loc[4,'Time_Elapsed'] = (metade - begin) + (final2-final)
+
+
+    print("\n\n.Detection Info")
+    print(detection_info.to_string(index=False))
+    detection_info.to_csv('results/Fourth_ADP_detection_info_{}_{}.csv'.format(gra,n_i), index=False)
+
+
 
 def ADP_Offline_Granularity_Iteration_5th(static, streaming, gra, b_test, n_i):
     begin = datetime.now()
@@ -1715,4 +1974,4 @@ def ADP_Offline_Granularity_Iteration_5th(static, streaming, gra, b_test, n_i):
 
     print("\n\n.Detection Info")
     print(detection_info.to_string(index=False))
-    detection_info.to_csv('results/First_ADP_detection_info_{}_{}.csv'.format(gra,n_i), index=False)
+    detection_info.to_csv('results/Fifth_ADP_detection_info_{}_{}.csv'.format(gra,n_i), index=False)
