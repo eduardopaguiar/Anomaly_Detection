@@ -201,5 +201,54 @@ def main():
         print('\n        ====Data Analysis Complete====\n' )
         print('=*='*17 )
 
+
 if __name__ == '__main__':
     main() 
+
+seed_pdf = []
+streaming_pdf = []
+
+for i in range(len(background_seed[0,:])):
+    seed_var = background_seed[:,i]
+    streaming_var = streaming_data[:,i]
+    background_streaming_var = streaming_background[:,i]
+    signal_streaming_var = reduced_signal[:,i]
+
+    seed_kde = stats.gaussian_kde(seed_var)
+    streaming_kde = stats.gaussian_kde(streaming_var)
+    background_streaming_kde = stats.gaussian_kde(background_streaming_var)
+    signal_streaming_kde = stats.gaussian_kde(signal_streaming_var)
+    
+    seed_pdf.append(seed_kde(seed_var))
+    streaming_pdf.append(seed_kde(seed_var))
+    
+    seed_var = np.sort(seed_var)
+    streaming_var = np.sort(streaming_var)
+    background_streaming_var = np.sort(background_streaming_var)
+    signal_streaming_var = np.sort(signal_streaming_var)
+    
+    seed_cdf = pdf_to_cdf(seed_var,seed_kde)
+    streaming_cdf = pdf_to_cdf(streaming_var,streaming_kde)
+    background_streaming_cdf = pdf_to_cdf(background_streaming_var,background_streaming_kde)
+    signal_streaming_cdf = pdf_to_cdf(signal_streaming_var,signal_streaming_kde)
+
+    fig = plt.figure(figsize=[36,8])
+    ax = fig.subplots(1,2)
+
+    # Plot the Probability Distribuction Function (PDF)
+    ax[0].plot(background_streaming_var, np.zeros(background_streaming_var.shape), 'bx', ms=5)  # rug plot
+    ax[0].plot(signal_streaming_var, np.zeros(signal_streaming_var.shape), 'rx', ms=5)  # rug plot
+    ax[0].plot(seed_var, seed_kde(seed_var), 'k', linewidth=4)
+    ax[0].plot(streaming_var, streaming_kde(streaming_var),'g', linewidth=4)
+    ax[0].plot(background_streaming_var, background_streaming_kde(background_streaming_var), '-.b',linewidth=4)
+    ax[0].plot(signal_streaming_var, signal_streaming_kde(signal_streaming_var), 'r',linewidth=4)
+    
+    # Plot the Cumulative Distribuction Function (CDF)
+    ax[1].plot(seed_var, seed_cdf, 'k', linewidth=4)
+    ax[1].plot(streaming_var, streaming_cdf,'g', linewidth=4)
+    ax[1].plot(background_streaming_var, background_streaming_cdf, '-.b',linewidth=4)
+    ax[1].plot(signal_streaming_var, signal_streaming_cdf, 'r',linewidth=4)
+    
+    
+
+    plt.show()
